@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alice Bakery - Sistem Pembukuan Usaha</title>
+    <meta name="theme-color" content="#f3df9e">
+    <meta name="description" content="Sistem pembukuan dan operasional Alice Bakery & Roti Bakar">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="alice-app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="alice-app-icon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="homePage" class="home-page">
+        <header class="header home-header">
+            <div class="brand-box home-brand">
+                <span class="home-logo">
+                    <img src="logo-alice.webp" alt="Logo Alice Bakery">
+                </span>
+                <span class="home-welcome">
+                    <span class="home-greeting">Assalamualaikum</span>
+                    <span class="home-owner-name">Teh Elis! <span aria-label="senyum penuh kasih">🥰</span></span>
+                    <span class="home-brand-name">Alice Bakery &amp; Roti Bakar</span>
+                </span>
+            </div>
+        </header>
+
+        <main class="home-dashboard">
+            <section class="production-card" aria-labelledby="productionTitle">
+                <div class="production-card-heading">
+                    <div>
+                        <span class="eyebrow-label">PERFORMA PRODUKSI</span>
+                        <h2 id="productionTitle">Total Produksi Roti Bulan Ini</h2>
+                    </div>
+                    <button class="month-chip" type="button" aria-label="Pilih bulan ringkasan produksi" onclick="bukaPemilihBulanProduksi()">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7.5 3v4M16.5 3v4M3.5 10h17"/></svg>
+                        <span id="labelBulanProduksi">Bulan ini</span>
+                    </button>
+                </div>
+                <input id="inputBulanProduksi" class="production-month-input" type="month" aria-label="Pilih bulan produksi" onchange="pilihBulanProduksi(this.value)">
+                <div class="production-metric" aria-label="Estimasi produksi dalam sak dan jumlah roti">
+                    <div class="production-sack-total">
+                        <strong id="totalSakBulanan">0,00</strong>
+                        <span>SAK</span>
+                    </div>
+                    <p class="production-sacks">setara <strong id="totalProduksiBulanan">0</strong> pcs roti</p>
+                </div>
+                <div id="productionChart" class="production-chart" role="img" aria-label="Grafik kuantitas order per minggu">
+                    <div class="chart-guides" aria-hidden="true"><span></span><span></span><span></span></div>
+                    <svg viewBox="0 0 340 112" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="productionArea" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#b99a66" stop-opacity=".28"/>
+                                <stop offset="100%" stop-color="#b99a66" stop-opacity="0"/>
+                            </linearGradient>
+                            <linearGradient id="productionLine" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#9c7c4c"/>
+                                <stop offset="100%" stop-color="#d0b782"/>
+                            </linearGradient>
+                        </defs>
+                        <path id="productionAreaPath" d="M0 88 L340 88 V112 H0 Z" fill="url(#productionArea)"/>
+                        <path id="productionLinePath" d="M0 88 L340 88" fill="none" stroke="url(#productionLine)" stroke-width="3" stroke-linecap="round"/>
+                        <circle id="productionChartPoint" cx="340" cy="88" r="4.5" fill="#9c7c4c" stroke="#fff" stroke-width="2.5"/>
+                    </svg>
+                </div>
+                <div class="chart-months" aria-hidden="true"><span>Minggu 1</span><span>Minggu 2</span><span>Minggu 3</span><span>Minggu 4</span><span>Minggu 5</span></div>
+            </section>
+
+            <section class="daily-summary-card" aria-labelledby="dailySummaryTitle">
+                <div class="summary-heading">
+                    <span class="summary-heading-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 3h10v3h3v15H4V6h3V3Z"/><path d="M8 3v5M16 3v5M8 12h8M8 16h5"/></svg>
+                    </span>
+                    <div>
+                        <h2 id="dailySummaryTitle">Ringkasan Harian</h2>
+                        <p>Ikhtisar operasional toko</p>
+                    </div>
+                </div>
+                <div class="summary-row">
+                    <span>Total Order Masuk</span>
+                    <strong><span id="homeOrderCount">0</span> Pesanan</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Stok Etalase Toko</span>
+                    <strong><span id="homeDisplayStock">0</span> Roti Siap Jual</strong>
+                </div>
+                <div class="summary-row summary-row-safe">
+                    <span>Potensi Selisih</span>
+                    <strong><span id="homePotentialDifference">0</span> Pcs <span id="homeSafetyStatus">• Aman</span></strong>
+                </div>
+            </section>
+
+            <aside class="ingredient-note" aria-label="Catatan bahan baku">
+                <span class="ingredient-note-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                </span>
+                <p><strong>Catatan Bahan Baku</strong><span>Tepung terigu tersisa 2 Kg &amp; Mentega menipis.</span></p>
+            </aside>
+        </main>
+        <div class="footer"><p>Alice Bakery v1.0 <span aria-hidden="true">•</span> Dibuat dengan hangat</p></div>
+        </div>
+
+        <section id="ownerAccountPage" class="owner-account-page" aria-labelledby="ownerAccountTitle">
+            <header class="owner-page-heading">
+                <h1 id="ownerAccountTitle">Akun Owner</h1>
+                <p>Kelola profil dan pengaturan toko</p>
+            </header>
+
+            <div class="owner-profile-card">
+                <div class="owner-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                </div>
+                <div class="owner-profile-info">
+                    <h2>Owner Roti Bakar</h2>
+                    <p><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h.01M15 10h.01M9 14h.01M15 14h.01M10 21v-4h4v4"/></svg> Toko Utama Bandung</p>
+                </div>
+                <svg class="owner-profile-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <section class="owner-section" aria-labelledby="ownerDashboardTitle">
+                <h2 id="ownerDashboardTitle" class="owner-section-title">TAMPILKAN DI BERANDA</h2>
+                <div class="owner-settings-card">
+                    <div class="owner-toggle-row">
+                        <div class="owner-toggle-copy">
+                            <span>Grafik Produksi Bulanan</span>
+                            <span class="owner-active-label">ACTIVE</span>
+                        </div>
+                        <button class="owner-toggle" type="button" role="switch" aria-checked="true" aria-label="Tampilkan grafik produksi bulanan di beranda" onclick="toggleDashboardSetting(this)">
+                            <span></span>
+                        </button>
+                    </div>
+                    <div class="owner-toggle-row">
+                        <span class="owner-toggle-label">Status Stok Bahan Darurat</span>
+                        <button class="owner-toggle" type="button" role="switch" aria-checked="true" aria-label="Tampilkan status stok bahan darurat di beranda" onclick="toggleDashboardSetting(this)">
+                            <span></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="owner-section" aria-labelledby="ownerDataTitle">
+                <h2 id="ownerDataTitle" class="owner-section-title">PENGELOLAAN DATA</h2>
+                <div class="owner-menu-list">
+                    <button class="owner-menu-card" type="button" onclick="bukaMenuPengaturan('barang')">
+                        <span class="owner-menu-icon owner-icon-orange"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/></svg></span>
+                        <span class="owner-menu-copy"><strong>Kelola Barang &amp; Bahan</strong><small>Atur katalog dan stok barang</small></span>
+                        <svg class="owner-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="owner-menu-card" type="button" onclick="bukaMenuPengaturan('pelanggan')">
+                        <span class="owner-menu-icon owner-icon-green"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5.2a3.5 3.5 0 0 1 0 6.7M18 14a5.5 5.5 0 0 1 3.5 5"/></svg></span>
+                        <span class="owner-menu-copy"><strong>Kelola Pelanggan</strong><small>Atur data pelanggan dan supplier</small></span>
+                        <svg class="owner-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+            </section>
+
+            <section class="owner-section" aria-labelledby="ownerControlTitle">
+                <h2 id="ownerControlTitle" class="owner-section-title">PUSAT KONTROL SISTEM</h2>
+                <div class="owner-menu-list">
+                    <button class="owner-menu-card" type="button" onclick="bukaModalSinkronisasi()">
+                        <span class="owner-menu-icon owner-icon-green"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></span>
+                        <span class="owner-menu-copy"><strong>Sinkronisasi Perangkat</strong><small id="statusSinkronisasiSingkat">Hubungkan data laptop dan HP</small></span>
+                        <svg class="owner-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="owner-menu-card" type="button" onclick="bukaModalFormulasi()">
+                        <span class="owner-menu-icon owner-icon-yellow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg></span>
+                        <span class="owner-menu-copy"><strong>Rasio &amp; Rumus Produksi</strong><small>Sesuaikan formulasi dan kapasitas</small></span>
+                        <svg class="owner-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="owner-menu-card" type="button" onclick="bukaMenuPengaturan('akun')">
+                        <span class="owner-menu-icon owner-icon-slate"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4L7.3 15a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1L11 7.4h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a8 8 0 0 1-.1 2Z" transform="translate(-1 -1)"/></svg></span>
+                        <span class="owner-menu-copy"><strong>Pengaturan &amp; Database</strong><small>Pengaturan aplikasi dan data</small></span>
+                        <svg class="owner-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+            </section>
+        </section>
+
+        <nav class="bottom-nav" aria-label="Navigasi utama">
+            <button class="bottom-nav-button active" type="button" data-bottom-tab="beranda" aria-current="page" onclick="pilihNavigasi('beranda')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
+                <span>Beranda</span>
+            </button>
+            <div class="bottom-nav-order-item">
+                <button class="bottom-nav-button" type="button" data-bottom-tab="order" aria-label="Buka form input order" onclick="pilihNavigasi('order', true)">
+                    <span class="bottom-nav-cart">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+                    </span>
+                    <span>Order</span>
+                </button>
+                <button class="bottom-nav-order-shortcut" type="button" aria-label="Tambah order baru" onclick="pilihNavigasi('order', true)">+</button>
+            </div>
+            <button class="bottom-nav-button bottom-nav-sell" type="button" data-bottom-tab="jual" aria-label="Jual cepat, buka form penjualan" onclick="pilihNavigasi('jual')">
+                <span class="bottom-nav-sell-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13.2 2.8-8 11.1a.7.7 0 0 0 .6 1.1h5.1l-.8 6.2 8.7-11.5a.7.7 0 0 0-.6-1.1h-5.3l.3-5.8Z"/></svg>
+                </span>
+                <span>Jual Cepat</span>
+            </button>
+            <button class="bottom-nav-button" type="button" data-bottom-tab="transaksi" onclick="pilihNavigasi('transaksi')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4 4m-4-4 4-4"/></svg>
+                <span>Transaksi</span>
+            </button>
+            <button class="bottom-nav-button" type="button" data-bottom-tab="akun" onclick="pilihNavigasi('akun')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                <span>Akun Owner</span>
+            </button>
+        </nav>
+
+        <section id="modalTransaksi" class="modal transaction-menu-modal" role="dialog" aria-modal="true" aria-labelledby="transactionMenuTitle">
+            <div class="modal-header">
+                <div>
+                    <h3 id="transactionMenuTitle">Transaksi</h3>
+                    <p class="transaction-menu-subtitle">Pilih aktivitas yang ingin dibuka</p>
+                </div>
+                <button class="btn-close" type="button" aria-label="Tutup menu transaksi" onclick="tutupModal('modalTransaksi')">X</button>
+            </div>
+            <div class="transaction-menu-options">
+                <button class="transaction-menu-option transaction-cash-option" type="button" onclick="bukaKasDariMenuTransaksi()">
+                    <span class="transaction-option-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3m8-5V6"/></svg>
+                    </span>
+                    <span class="transaction-option-copy"><strong>Kas</strong><small>Kelola pemasukan dan pengeluaran</small></span>
+                    <svg class="transaction-option-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <button class="transaction-menu-option transaction-order-option" type="button" onclick="bukaOrderDariMenuTransaksi()">
+                    <span class="transaction-option-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+                    </span>
+                    <span class="transaction-option-copy"><strong>Order</strong><small>Lihat daftar pesanan dan produksi</small></span>
+                    <svg class="transaction-option-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <button class="transaction-menu-option transaction-sell-option" type="button" onclick="bukaJualDariMenuTransaksi()">
+                    <span class="transaction-option-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M3 3h2l2.2 11.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 1.9-1.4L21 7H6"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M12 8v5m-2.5-2.5h5"/></svg>
+                    </span>
+                    <span class="transaction-option-copy"><strong>Penjualan</strong><small>Lihat catatan lengkap dan pilih tanggal</small></span>
+                    <svg class="transaction-option-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <section id="modalJurnalKas" class="modal cash-journal-screen" role="dialog" aria-modal="true" aria-labelledby="cashJournalTitle">
+            <header class="modal-header cash-journal-topbar">
+                <h3 id="cashJournalTitle"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Jurnal &amp; Kas</h3>
+                <button class="btn-close" type="button" aria-label="Kembali ke menu transaksi" onclick="tutupJurnalKas()">X</button>
+            </header>
+            <div class="cash-journal-body">
+                <div class="cash-date-sticky">
+                    <button class="cash-week-button" type="button" aria-label="Minggu sebelumnya" onclick="geserMingguKas(-1)">◀</button>
+                    <div class="cash-week-label">
+                        <span>MINGGU AKTIF</span>
+                        <strong id="rentangTanggalKas"></strong>
+                    </div>
+                    <button id="tombolPilihTanggalKas" class="cash-week-button cash-calendar-button" type="button" aria-label="Pilih tanggal atau minggu" onclick="bukaPemilihTanggalKas()"><i class="fa-regular fa-calendar-days" aria-hidden="true"></i></button>
+                    <input id="inputTanggalKas" class="date-picker-input" type="date" aria-label="Pilih tanggal jurnal kas" onchange="pilihTanggalMingguKas(this.value)">
+                </div>
+                <div class="cash-journal-table-wrap" role="region" aria-label="Daftar jurnal kas">
+                    <table class="cash-journal-table">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Masuk (Rp)</th>
+                                <th class="cash-balance-heading">Saldo (Rp)</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelJurnalKasBody"></tbody>
+                    </table>
+                </div>
+                <p id="pesanJurnalKasKosong" class="cash-journal-empty" hidden>Belum ada catatan kas untuk minggu ini.</p>
+            </div>
+        </section>
+
+        <section id="modalRiwayatPenjualan" class="modal sales-history-screen" role="dialog" aria-modal="true" aria-labelledby="salesHistoryTitle">
+            <header class="sales-topbar sales-history-topbar">
+                <div class="sales-title-group">
+                    <span class="sales-header-icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></span>
+                    <div class="sales-title-copy">
+                        <span class="sales-header-eyebrow">ALICE BAKERY</span>
+                        <h3 id="salesHistoryTitle">Penjualan</h3>
+                        <p>Geser kiri atau kanan untuk berpindah hari</p>
+                    </div>
+                </div>
+                <button class="sales-close-button" type="button" aria-label="Kembali ke halaman sebelumnya" onclick="tutupRiwayatPenjualan()">×</button>
+            </header>
+            <div class="sales-history-view-body">
+                <div class="sales-history-view-summary">
+                    <div><span>Jumlah transaksi</span><strong id="salesHistoryDayCount">0 transaksi</strong></div>
+                    <div><span>Total penjualan</span><strong id="salesHistoryDayTotal">Rp 0</strong></div>
+                </div>
+                <div class="sales-history-toolbar">
+                    <div class="sales-history-date-nav" aria-label="Pilih hari riwayat penjualan"
+                         ontouchstart="mulaiGeserRiwayatPenjualan(event)" ontouchend="akhiriGeserRiwayatPenjualan(event)">
+                        <button class="sales-history-day-button" type="button" aria-label="Lihat hari sebelumnya" onclick="geserHariRiwayatPenjualan(-1)">
+                            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        </button>
+                        <div class="sales-history-current-day">
+                            <span id="salesHistoryDayLabel">HARI INI</span>
+                        </div>
+                        <button id="salesHistoryNextDay" class="sales-history-day-button" type="button" aria-label="Lihat hari berikutnya" onclick="geserHariRiwayatPenjualan(1)">
+                            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <label class="sales-history-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <select id="salesHistorySearchCategory" aria-label="Kategori pencarian" onchange="renderRiwayatPenjualanLengkap()">
+                            <option value="semua">Semua</option>
+                            <option value="nama">Nama</option>
+                            <option value="barang">Barang</option>
+                            <option value="total">Total</option>
+                            <option value="bayar">Bayar</option>
+                            <option value="status">Status</option>
+                            <option value="metode">Metode</option>
+                            <option value="transaksi">No. nota</option>
+                        </select>
+                        <input id="salesHistorySearch" type="search" placeholder="Cari..." aria-label="Cari penjualan" oninput="renderRiwayatPenjualanLengkap()">
+                    </label>
+                </div>
+                <div class="sales-history-filter-row">
+                    <label class="sales-history-status-filter">
+                        <span>Filter status</span>
+                        <select id="salesHistoryStatusFilter" aria-label="Filter status transaksi" onchange="renderRiwayatPenjualanLengkap()">
+                            <option value="semua">Semua status</option>
+                            <option value="lunas">Lunas</option>
+                            <option value="kurang">Kurang bayar</option>
+                        </select>
+                    </label>
+                    <p class="sales-history-swipe-hint">Geser untuk ganti hari</p>
+                </div>
+                <div id="salesHistoryDayEntries" class="sales-history-day-entries"></div>
+            </div>
+            <footer class="sales-history-view-footer">
+                <button class="sales-history-today-button" type="button" onclick="bukaRiwayatPenjualanHariIni()">Hari Ini</button>
+                <button class="sales-history-quick-sell" type="button" onclick="bukaKasirDariRiwayat()">Jual Cepat</button>
+            </footer>
+        </section>
+
+        <section id="modalSinkronisasi" class="modal cloud-sync-modal" role="dialog" aria-modal="true" aria-labelledby="cloudSyncTitle">
+            <header class="modal-header">
+                <h3 id="cloudSyncTitle"><i class="fa-solid fa-cloud" aria-hidden="true"></i> Sinkronisasi Perangkat</h3>
+                <button class="btn-close" type="button" aria-label="Tutup sinkronisasi" onclick="tutupModal('modalSinkronisasi')">X</button>
+            </header>
+            <p class="cloud-sync-description">Data akun, pelanggan, barang, order, dan transaksi tersimpan di cloud agar bisa dilanjutkan dari perangkat lain.</p>
+            <p id="statusSinkronisasi" class="cloud-sync-status" role="status">Belum terhubung. Siapkan project Supabase terlebih dahulu.</p>
+            <div class="form-group">
+                <label for="urlSupabase">URL project Supabase</label>
+                <input id="urlSupabase" type="url" autocomplete="url" placeholder="https://project-id.supabase.co">
+            </div>
+            <div class="form-group">
+                <label for="kunciPublikSupabase">Publishable key / anon key</label>
+                <input id="kunciPublikSupabase" type="password" autocomplete="off" placeholder="sb_publishable_... atau anon key">
+            </div>
+            <div class="form-group">
+                <label for="emailSinkronisasi">Email akun sinkronisasi</label>
+                <input id="emailSinkronisasi" type="email" autocomplete="username" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+                <label for="kataSandiSinkronisasi">Kata sandi akun</label>
+                <input id="kataSandiSinkronisasi" type="password" autocomplete="current-password" placeholder="Kata sandi akun Supabase">
+            </div>
+            <div class="cloud-sync-actions">
+                <button class="account-save-button" type="button" onclick="masukSinkronisasi()">Masuk &amp; Sinkronkan</button>
+                <button class="account-cancel-button" type="button" onclick="daftarAkunSinkronisasi()">Buat Akun</button>
+            </div>
+            <button id="tombolKeluarSinkronisasi" class="cloud-sync-logout" type="button" onclick="keluarSinkronisasi()" hidden>Putuskan perangkat ini</button>
+            <p class="cloud-sync-note">Jangan masukkan service-role key. Gunakan hanya publishable/anon key.</p>
+            <section class="storage-settings-section" aria-labelledby="storageSettingsTitle">
+                <h4 id="storageSettingsTitle">Pengaturan penyimpanan</h4>
+                <div class="storage-setting-row">
+                    <span class="storage-setting-copy"><strong>Simpan otomatis di perangkat ini</strong><small>Aktif terus; perubahan tersimpan di browser ini.</small></span>
+                    <span class="storage-setting-state">AKTIF</span>
+                </div>
+                <div class="storage-setting-row">
+                    <span class="storage-setting-copy"><strong>Upload otomatis ke cloud</strong><small id="statusUploadOtomatis">Menunggu koneksi akun cloud.</small></span>
+                    <button id="toggleUploadOtomatis" class="owner-toggle" type="button" role="switch" aria-checked="true" aria-label="Upload otomatis ke cloud" onclick="toggleUploadOtomatis()"><span></span></button>
+                </div>
+            </section>
+            <section class="local-backup-section" aria-labelledby="localBackupTitle">
+                <h4 id="localBackupTitle">Pindahkan data tanpa internet</h4>
+                <p>Unduh cadangan ke folder pilihan, lalu kirim file itu ke HP. Di HP, buka aplikasi dan pilih file cadangannya.</p>
+                <button class="account-save-button local-backup-download" type="button" onclick="unduhCadanganLokal()"><i class="fa-solid fa-download" aria-hidden="true"></i> Unduh Cadangan</button>
+                <button class="account-cancel-button local-backup-import" type="button" onclick="document.getElementById('fileCadanganLokal').click()"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Pulihkan Cadangan</button>
+                <input id="fileCadanganLokal" class="local-backup-file" type="file" accept=".json,application/json" aria-label="Pilih file cadangan data" onchange="pulihkanCadanganLokal(this)">
+                <p id="statusCadanganLokal" class="cloud-sync-status" role="status">Cadangan berisi data aplikasi, bukan kata sandi atau sesi cloud.</p>
+            </section>
+        </section>
+
+        <section id="modalDetailNotaPenjualan" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="detailNotaTitle">
+            <div class="sales-receipt-dialog">
+                <header class="sales-receipt-header">
+                    <div class="sales-receipt-brand">ALICE BAKERY</div>
+                    <h3 id="detailNotaTitle">Nota Penjualan</h3>
+                    <p id="detailNotaTanggal"></p>
+                </header>
+                <div id="detailNotaContent" class="sales-receipt-content"></div>
+                <footer class="sales-receipt-actions">
+                    <button class="sales-secondary-button" type="button" onclick="tutupDetailNotaPenjualan()">Kembali</button>
+                </footer>
+            </div>
+        </section>
+
+        <section id="modalPenjualan" class="modal sales-screen" role="dialog" aria-modal="true" aria-labelledby="salesModalTitle">
+            <header class="sales-topbar">
+                <div class="sales-title-group">
+                    <span class="sales-header-icon" aria-hidden="true"><i class="fa-solid fa-store"></i></span>
+                    <div class="sales-title-copy">
+                        <span class="sales-header-eyebrow">ALICE BAKERY</span>
+                        <h3 id="salesModalTitle">Penjualan</h3>
+                        <p id="salesDateLabel"></p>
+                    </div>
+                </div>
+                <div class="sales-header-actions">
+                    <button class="sales-view-history-button" type="button" onclick="bukaRiwayatPenjualanDariKasir()">
+                        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                        <span>Lihat Penjualan</span>
+                    </button>
+                    <button class="sales-close-button" type="button" aria-label="Tutup kasir" onclick="tutupModal('modalPenjualan')">×</button>
+                </div>
+            </header>
+            <div class="sales-body">
+                <div class="sales-search-row">
+                    <input id="jualBarang" type="text" autocomplete="off" aria-label="Cari nama atau kode barang" placeholder="Masukkan Nama/Kode Barang" oninput="pilihBarangPenjualan()" onkeydown="tanganiTombolCariBarang(event)">
+                    <div id="daftarBarangJual" class="sales-suggestions" role="listbox" aria-label="Pilihan barang" hidden></div>
+                    <button class="sales-tool-button" type="button" aria-label="Fokus ke pencarian barang" onclick="document.getElementById('jualBarang').focus()"><i class="fa-solid fa-barcode" aria-hidden="true"></i></button>
+                </div>
+                <div class="sales-cart-section">
+                    <div id="daftarBelanjaKosong" class="sales-empty-cart">Belum ada barang ditambahkan.</div>
+                    <div id="daftarBelanjaJual"></div>
+                </div>
+            </div>
+            <footer class="sales-payment-panel">
+                <div class="sales-payment-row sales-total-row"><span>Total Harga</span><strong id="totalBelanjaJual">Rp 0</strong></div>
+                <label class="sales-payment-row sales-paid-row" for="jumlahBayarPenjualan">
+                    <span>Bayar <small>Rp</small></span>
+                    <input id="jumlahBayarPenjualan" type="text" inputmode="numeric" autocomplete="off" placeholder="0" oninput="perbaruiPembayaranPenjualan()">
+                </label>
+                <div class="sales-payment-row sales-change-row"><span id="labelSelisihBayar">Kembalian</span><strong id="kembalianPenjualan">Rp 0</strong></div>
+                <div class="sales-action-row">
+                    <button class="sales-cancel-button" type="button" onclick="batalkanPenjualanKasir()">Batal</button>
+                    <button class="sales-process-button" type="button" onclick="konfirmasiSimpanPenjualan()">Proses</button>
+                </div>
+            </footer>
+        </section>
+
+        <section id="modalPelangganTransaksi" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="transactionCustomerTitle">
+            <div class="sales-small-dialog">
+                <h3 id="transactionCustomerTitle">Pilih Pelanggan Pedagang</h3>
+                <label for="pelangganTransaksi">Nama pelanggan</label>
+                <select id="pelangganTransaksi"></select>
+                <details class="sales-quick-customer">
+                    <summary>Tambah pelanggan Pedagang baru</summary>
+                    <label for="pelangganBaruNamaKasir">Nama pelanggan</label>
+                    <input id="pelangganBaruNamaKasir" type="text" autocomplete="off" placeholder="Nama wajib diisi">
+                    <label for="pelangganBaruHpKasir">Nomor HP (opsional)</label>
+                    <input id="pelangganBaruHpKasir" type="tel" autocomplete="off" placeholder="Nomor HP">
+                    <button class="sales-secondary-button" type="button" onclick="simpanPelangganBaruDariKasir()">Simpan pelanggan</button>
+                </details>
+                <button class="btn-submit" type="button" onclick="lanjutkanPenjualanDenganPelanggan()">Lanjutkan</button>
+            </div>
+        </section>
+
+        <section id="modalKembalianLebih" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="overpaymentTitle">
+            <div class="sales-small-dialog">
+                <h3 id="overpaymentTitle">Pembayaran Lebih</h3>
+                <p>Kembalian <strong id="jumlahKembalianLebih">Rp 0</strong></p>
+                <p id="pelangganPembayaranLebih"></p>
+                <div class="sales-short-payment-actions">
+                    <button class="sales-secondary-button" type="button" onclick="prosesKembalianPenjualan()">Berikan Kembalian</button>
+                    <button class="btn-submit" type="button" onclick="simpanLebihKeTabunganPelanggan()">Masukkan ke Tabungan</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="modalPembayaranKurang" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="shortPaymentTitle">
+            <div class="sales-small-dialog">
+                <h3 id="shortPaymentTitle">Pembayaran Belum Cukup</h3>
+                <p>Kekurangan pembayaran: <strong id="jumlahKekuranganPenjualan">Rp 0</strong></p>
+                <p>Pelanggan: <strong id="pelangganPembayaranKurang"></strong></p>
+                <div class="sales-short-payment-actions">
+                    <button class="sales-secondary-button" type="button" onclick="catatKekuranganSebagaiHutang()">Catat Hutang</button>
+                    <button class="btn-submit" type="button" onclick="catatKekuranganSebagaiQris()">Bayar QRIS</button>
+                </div>
+                <button class="sales-back-button" type="button" onclick="kembaliKePembayaranTunai()">Kembali</button>
+            </div>
+        </section>
+
+        <section id="modalNotaPenjualan" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="receiptReadyTitle">
+            <div class="sales-small-dialog">
+                <h3 id="receiptReadyTitle">Penjualan Berhasil</h3>
+                <p id="ringkasanNotaPenjualan"></p>
+                <button class="sales-whatsapp-button" type="button" onclick="kirimNotaPenjualanWhatsApp()" aria-label="Bagikan nota penjualan melalui WhatsApp">
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Kirim Nota
+                </button>
+                <button class="btn-submit" type="button" onclick="tutupModalNotaPenjualan()">Kembali ke Penjualan</button>
+            </div>
+        </section>
+
+        <section id="modalStokAwalProduksi" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="stockProductionTitle">
+            <div class="sales-small-dialog">
+                <h3 id="stockProductionTitle">Catat Stok Produksi Awal</h3>
+                <p>Masukkan stok tersedia untuk <strong id="namaBarangStokProduksi"></strong> sebelum melanjutkan penjualan.</p>
+                <label for="qtyStokAwalProduksi">Jumlah tersedia</label>
+                <input id="qtyStokAwalProduksi" type="number" min="0" step="1" value="0">
+                <div class="sales-dialog-actions">
+                    <button class="sales-secondary-button" type="button" onclick="batalInputStokAwalProduksi()">Batal</button>
+                    <button class="btn-submit" type="button" onclick="simpanStokAwalProduksi()">Simpan Stok</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="modalPengingatStokMasuk" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="stockReminderTitle">
+            <div class="sales-small-dialog">
+                <h3 id="stockReminderTitle">Pengingat Stok Barang Masuk</h3>
+                <p>Periksa apakah ada barang toko yang baru diterima dan belum dicatat stok masuknya.</p>
+                <div class="sales-dialog-actions">
+                    <button class="sales-secondary-button" type="button" onclick="tundaPengingatStokMasuk()">Nanti</button>
+                    <button class="btn-submit" type="button" onclick="bukaFormStokMasuk()">Input Stok Masuk</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="modalStokMasuk" class="modal sales-centered-modal" role="dialog" aria-modal="true" aria-labelledby="stockInTitle">
+            <div class="sales-small-dialog">
+                <div class="modal-header">
+                    <h3 id="stockInTitle">Input Stok Barang Masuk</h3>
+                    <button class="btn-close" type="button" aria-label="Tutup input stok masuk" onclick="tutupModal('modalStokMasuk')">X</button>
+                </div>
+                <label for="barangStokMasuk">Barang Toko</label>
+                <select id="barangStokMasuk" onchange="tampilkanSatuanStokMasuk()"></select>
+                <label id="labelQtyStokMasuk" for="qtyStokMasuk">Jumlah masuk</label>
+                <input id="qtyStokMasuk" type="number" min="1" step="1" placeholder="Masukkan jumlah">
+                <button class="btn-submit" type="button" onclick="simpanStokMasuk()">Simpan Stok Masuk</button>
+            </div>
+        </section>
+
+        <!-- MODAL MENU ORDER & PRODUKSI (LAPISAN UTAMA YANG DIKLIK DARI MENU ORDER) -->
+        <div id="modalOrder" class="modal">
+            <div class="modal-header">
+                <div><h3 style="color: #d97724;"><i class="fa-solid fa-boxes-packing"></i> Menu Order & Produksi</h3></div>
+                <button class="btn-close" onclick="tutupModal('modalOrder')">X</button>
+            </div>
+            
+            <!-- NAVIGASI TANGGAL -->
+            <div id="dateNavigation" class="date-navigation">
+                <button id="btnTanggalSebelumnya" class="date-nav-arrow" onclick="geserTanggal(-1)" aria-label="Tanggal sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="date-navigation-current">
+                    <span id="lblTanggalKonteks" class="date-context-label">HARI INI</span>
+                    <span id="txtHariAktif" class="date-weekday">Minggu</span>
+                    <button id="btnPilihTanggal" class="date-picker-trigger" onclick="bukaPemilihTanggal()" aria-label="Pilih tanggal order">
+                        <span id="txtTanggalAktif" class="date-full-label">25 Oktober 2026</span>
+                        <i class="fa-regular fa-calendar-days" aria-hidden="true"></i>
+                    </button>
+                    <input id="inputTanggalOrder" class="date-picker-input" type="date" onchange="pilihTanggalOrder(this.value)" aria-label="Pilih tanggal order">
+                </div>
+                <button id="btnTanggalBerikutnya" class="date-nav-arrow" onclick="geserTanggal(1)" aria-label="Tanggal berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div id="archiveNotice" class="info-stok-awal" style="display:none; background:#f4f1eb; border-color:#e4ddd1; color:#76664d;">
+                <span><i class="fa-solid fa-box-archive"></i> Tanggal lampau — data ini hanya dapat dilihat sebagai arsip.</span>
+            </div>
+            
+            <!-- DASHBOARD KARTU ANGKA -->
+            <div class="dashboard-container">
+                <div class="dash-main-grid">
+                    <div class="dash-column">
+                        <div class="dash-card card-order"><span class="dash-card-title">ORDER (RT)</span><span class="dash-card-val" id="txtTotalOrder">0</span></div>
+                        <div class="dash-card"><span class="dash-card-title">Stock Awal</span><span class="dash-card-val" id="txtStokAwal">0</span></div>
+                        <div class="dash-card card-kebutuhan"><span class="dash-card-title">Kebutuhan</span><span class="dash-card-val" id="txtKebutuhan">0</span></div>
+                        
+                        <div class="dash-card card-produksi">
+                            <div class="card-produksi-header">
+                                <span class="dash-card-title" style="color:#c62828;">Produksi</span>
+                                <div><input type="number" id="inputProduksiSak" value="0" step="0.01" oninput="hitungPcsProduksiManual()" class="input-sak"> <b>Sak</b></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1px;">
+                                <span id="txtTepungKgKonversi" style="font-size: 10px; font-weight: 800; color: #5d4037;">0 kg Tepung</span>
+                                <span style="font-size: 13px; font-weight: 900; color: #c62828;" id="txtProduksiPcs">0 Pcs</span>
+                            </div>
+                            <div class="sub-konversi-tepung"><span>Takar Tepung:</span><b id="txtDetailRacikanTepung">0 Sak 0 Kg</b></div>
+                        </div>
+
+                        <div class="dash-card card-jual"><span class="dash-card-title">JUAL</span><span class="dash-card-val" id="txtTotalSales">0</span></div>
+                    </div>
+
+                    <div class="dash-column">
+                        <div class="dash-card card-stock-akhir"><span class="dash-card-title">Stok akhir</span><span class="dash-card-val" id="txtStokTeoritis">0</span></div>
+                        <div class="dash-card card-real">
+                            <span class="dash-card-title">Real</span>
+                            <input type="number" id="inputStokRealManual" value="" min="0" placeholder="Input" oninput="simpanStokAkhirRealHariIni()" style="width: 55px; font-weight: 900; text-align: right; background: transparent; border: none; outline: none; color: #1e8449; font-size: 14px;">
+                        </div>
+                        <div class="dash-card card-selisih"><span class="dash-card-title">selisih</span><span class="dash-card-val" id="txtSelisih">0</span></div>
+
+                        <div class="grid-sisipan-kanan">
+                            <div class="card-mini-sisipan bg-etalase"><span class="lbl">stock etalase</span><span class="val" id="txtStokEtalaseVal">0</span></div>
+                            <div class="card-mini-sisipan bg-potensi"><span class="lbl">potensi selisi</span><span class="val" id="txtPotensiSelisihVal">0</span></div>
+                        </div>
+
+                        <div id="boxRotiNonReguler" class="box-non-reguler" style="display:none;">
+                            <h5>🍞 ROTI LAIN (NON-RT)</h5>
+                            <div id="listRotiNonRegulerDetail"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFO STOK AWAL -->
+            <div id="infoPengingatStok" class="info-stok-awal" style="display:none;">
+                <span><i class="fa-solid fa-circle-check"></i> Stok Awal RT hari ini tercatat dari real kemarin: <b id="lblValStokAwalInfo">0</b> Pcs</span>
+                <button id="btnUbahStokAwal" onclick="bukaModalStokUlang()" style="background:#2e7d32; color:white; border:none; padding:3px 6px; border-radius:4px; font-size:9px; cursor:pointer; font-weight:bold;">Ubah</button>
+            </div>
+            
+            <!-- TOMBOL TAMBAH ORDER -->
+            <button id="btnTambahOrder" class="fab-tambah" onclick="cekSebelumTambahOrder()"><i class="fa-solid fa-plus-circle"></i> + Tambah Orderan Baru</button>
+            
+            <!-- TABEL DAFTAR ORDER (DIJAMIN MUNCUL DI LAPISAN UTAMA TANPA TERTUTUP) -->
+            <div style="margin-top: 10px; margin-bottom: 30px;">
+                <h4 style="color: #5c3a21; margin-bottom: 6px; font-size: 12px;"><i class="fa-solid fa-list-check"></i> Daftar Order Pelanggan</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background:#f7f3ee; color:#5c3a21;">
+                            <th style="width:30px; padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">NO.</th>
+                            <th style="padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">NAMA</th>
+                            <th style="width:45px; padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">ORDER</th>
+                            <th style="padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">JENIS ROTI</th>
+                            <th style="width:40px; padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">JUAL</th>
+                            <th id="thAksiOrder" style="width:60px; padding: 6px; border: 1px solid #e0d8cc; font-size: 11px;">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelOrderBody">
+                        <!-- Data akan dirender otomatis oleh script.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MODAL INPUT STOK AWAL RT -->
+        <div id="modalInputStokAwal" class="modal" style="background: rgba(0,0,0,0.6); z-index: 150; display:none; justify-content:center; align-items:center;">
+            <div style="background:white; padding:20px; border-radius:12px; width:90%; max-width:380px;">
+                <h4 id="judulModalStokAwal" style="color:#c0392b; margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation"></i> ⚠️ Perhatian Operator!</h4>
+                <p id="pesanModalStokAwal" style="font-size: 11px; color: #666; margin-bottom: 10px;"></p>
+                <div id="formInputStokAwal" class="form-group"><label>Stok Akhir Real RT Kemarin (Pcs):</label><input type="number" id="inputStokRealAwal" min="0" placeholder="Contoh: 72"></div>
+                <button id="btnKonfirmasiStokAwal" class="btn-submit" onclick="prosesPopupStokAwal()" style="margin-top:10px; background:#d35400;">Simpan & Buka Form Order</button>
+            </div>
+        </div>
+
+        <!-- MODAL TAMBAH / EDIT ORDER -->
+        <div id="modalFormTambahOrder" class="modal" style="background: rgba(0,0,0,0.6); z-index: 150; display:none; justify-content:center; align-items:center;">
+            <div style="background:white; padding:20px; border-radius:12px; width:90%; max-width:350px;">
+                <div class="modal-header">
+                    <div>
+                        <h4 id="formOrderTitle" style="color:#5c3a21; margin-bottom:2px;">➕ Tambah Orderan</h4>
+                        <p style="font-size:10px; color:#888;">Tanggal aktif: <b id="lblFormTanggal">2026-10-25</b></p>
+                    </div>
+                    <button class="btn-close" onclick="tutupModal('modalFormTambahOrder')">X</button>
+                </div>
+                <input type="hidden" id="editIndexOrder" value="-1">
+                <div class="form-group"><label>Pilih Pelanggan:</label><select id="orderNamaSelect" required></select></div>
+                <div class="form-group"><label>Pilih Jenis Roti:</label><select id="orderRotiSelect" required></select></div>
+                <div class="form-group"><label>Jumlah Order (Qty Pesan):</label><input type="number" id="orderQty" min="1" placeholder="Contoh: 50"></div>
+                <button class="btn-submit" onclick="simpanOrderBaru()" style="margin-top:5px;">+ Masukkan Order</button>
+            </div>
+        </div>
+
+        <!-- MODAL FORMULASI RESEP -->
+        <div id="modalFormulasi" class="modal" style="z-index: 150;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-sliders" style="color:#e65100;"></i> Atur Rasio Resep (Per 1 Sak)</h3>
+                <button class="btn-close" onclick="tutupModal('modalFormulasi')">X</button>
+            </div>
+            <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Atur takaran pemakaian fisik bahan per 1 Sak Adonan Tepung (25 Kg).</p>
+            <div id="containerFormulasiBahan" style="max-height: 330px; overflow-y: auto; padding-right: 5px;"></div>
+            <div class="box-empiris">
+                <label><i class="fa-solid fa-award"></i> DATA EMPIRIS: HASIL JADI ROTI BAKAR BANDUNG</label>
+                <input type="number" id="inputEmpirisHasilRT" placeholder="Contoh: 160" oninput="hitungSimulasiKapasitasAdonan()">
+                <p style="font-size: 10px; color: #7f2701; margin-top: 4px; text-align: center;">ℹ️ Kapasitas 1 Sak = <b id="lblSimulasiKapasitasAdonan">40.000 gram</b>.</p>
+            </div>
+            <button class="btn-submit" onclick="simpanFormulasiBaru()" style="background: #d97724;"><i class="fa-solid fa-floppy-disk"></i> Simpan Formulasi Resep</button>
+        </div>
+
+        <!-- MODAL SETTING -->
+        <div id="modalSetting" class="modal" style="z-index: 150;">
+            <div class="modal-header"><h3>⚙️ Pengaturan Sistem</h3><button class="btn-close" onclick="tutupModal('modalSetting')">X</button></div>
+            <div class="setting-nav">
+                <button class="btn-subtab active" data-tab="barang" onclick="gantiTabSetting('barang')">Kelola Barang</button>
+                <button class="btn-subtab" data-tab="pelanggan" onclick="gantiTabSetting('pelanggan')">Kelola Pelanggan</button>
+                <button class="btn-subtab" data-tab="akun" onclick="gantiTabSetting('akun')">📑 Akun Database</button>
+            </div>
+            
+            <div id="subTabBarang" class="sub-section active">
+                <h4 id="formBarangTitle" style="margin-bottom: 10px; color: #5c3a21;">Tambah Barang Baru</h4>
+                <input type="hidden" id="editIndexBarang" value="-1">
+                <div class="form-group"><label>Kode Barang:</label><input type="text" id="kodeBarang" placeholder="Contoh: rt"></div>
+                <div class="form-group"><label>Nama Barang:</label><input type="text" id="namaBarang" placeholder="Contoh: Roti Bakar Bandung"></div>
+                <div class="form-group">
+                    <label>Jenis Barang:</label>
+                    <select id="jenisBarang" onchange="aturOpsiJenis()">
+                        <option value="">-- Pilih Jenis Barang --</option>
+                        <option value="Roti">Roti (Hasil Produksi)</option>
+                        <option value="Barang Supplier">Barang Supplier</option>
+                        <option value="Bahan Produksi">Bahan Produksi</option>
+                        <option value="Barang Toko">Barang Toko</option>
+                    </select>
+                </div>
+                <div id="boxSupplierProduksi" class="form-group" style="background: #faf4ed; padding: 12px; border-radius: 8px; border: 1px dashed #c2b2a3; display: none;">
+                    <label>Satuan Kulakan:</label>
+                    <select id="satuanSupplier" style="margin-bottom: 10px;">
+                        <option value="Karton (Kg)">Karton (Kg)</option>
+                        <option value="Karton (Pcs)">Karton (Pcs)</option>
+                        <option value="Sak (Kg)">Sak (Kg)</option>
+                        <option value="Box (Kg)">Box (Kg)</option>
+                        <option value="Pcs Lepas">Pcs Lepas</option>
+                        <option value="Liter">Liter</option>
+                        <option value="Kg">Kg</option>
+                    </select>
+                    <label>Isi / Berat Bersih Total:</label><input type="number" id="detailKonversiSup" placeholder="Contoh: 15">
+                </div>
+                <div id="boxBarangToko" class="form-group" style="background: #eef5ed; padding: 12px; border-radius: 8px; border: 1px dashed #a3c2a3; display: none;">
+                    <label>Harga Jual (Rp):</label><input type="number" id="hargaJualToko" placeholder="Contoh: 38000">
+                    <label style="margin-top:10px;">Satuan Barang:</label>
+                    <select id="satuanBarangToko">
+                        <option value="gram">Gram</option>
+                        <option value="pcs">Pcs</option>
+                    </select>
+                    <label style="margin-top:10px;">Berat Barang (gram):</label><input type="number" id="beratBarangToko" min="0" step="any" placeholder="Contoh: 250">
+                </div>
+                <div id="boxGramasiRoti" class="form-group" style="background: #fff8f0; padding: 12px; border-radius: 8px; border: 1px dashed #d97724; display: none;">
+                    <label style="color:#d97724;">Gramasi Per Pcs (gram):</label><input type="number" id="inputGramasiRoti" placeholder="Contoh: 250">
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-submit" id="btnSimpanBarang" onclick="simpanBarang()">+ Simpan Barang</button>
+                    <button class="btn-submit" id="btnBatalEditBarang" onclick="batalEditBarang()" style="display:none; background:#8d6e63;">Batal</button>
+                </div>
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                <h4 style="color: #5c3a21; font-size: 13px; margin-bottom: 6px;">📦 List Data Barang</h4>
+                <div class="list-filter-controls">
+                    <select id="filterJenisBarang" aria-label="Filter jenis barang" onchange="renderBarang()">
+                        <option value="">Semua jenis</option>
+                        <option value="Roti">Roti</option>
+                        <option value="Barang Supplier">Barang Supplier</option>
+                        <option value="Bahan Produksi">Bahan Produksi</option>
+                        <option value="Barang Toko">Barang Toko</option>
+                    </select>
+                    <div class="search-box-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="inputCariBarang" placeholder="Cari kode atau nama barang..." oninput="renderBarang()"></div>
+                </div>
+                <div id="containerListBarang"></div>
+            </div>
+
+            <div id="subTabPelanggan" class="sub-section">
+                <h4 id="formPelangganTitle" style="margin-bottom: 10px; color: #5c3a21;">Tambah Pelanggan Baru</h4>
+                <input type="hidden" id="editIndexPelanggan" value="-1">
+                <div class="form-group"><label>Nama Pelanggan / User:</label><input type="text" id="namaPelanggan" placeholder="Contoh: Ali"></div>
+                <div class="form-group"><label>Nomor HP:</label><input type="number" id="hpPelanggan" placeholder="Contoh: 08123456"></div>
+                <div class="form-group"><label>Jenis Pelanggan:</label><select id="jenisPelanggan"><option value="Pedagang">Pedagang</option><option value="Supplier">Supplier</option><option value="Keluarga">Keluarga</option></select></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-submit" id="btnSimpanPelanggan" onclick="simpanPelanggan()">+ Tambah Pelanggan</button>
+                    <button class="btn-submit" id="btnBatalEditPelanggan" onclick="batalEditPelanggan()" style="display:none; background:#8d6e63;">Batal</button>
+                </div>
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+                <h4 style="color: #5c3a21; font-size: 13px; margin-bottom: 6px;">👥 List Pelanggan</h4>
+                <div class="list-filter-controls">
+                    <select id="filterJenisPelanggan" aria-label="Filter jenis pelanggan" onchange="renderPelanggan()">
+                        <option value="">Semua jenis</option>
+                        <option value="Pedagang">Pedagang</option>
+                        <option value="Supplier">Supplier</option>
+                        <option value="Keluarga">Keluarga</option>
+                    </select>
+                    <div class="search-box-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="inputCariPelanggan" placeholder="Cari nama pelanggan..." oninput="renderPelanggan()"></div>
+                </div>
+                <div id="containerListPelanggan"></div>
+            </div>
+
+            <div id="subTabAkun" class="sub-section">
+                <section class="account-intro">
+                    <span class="account-intro-icon" aria-hidden="true"><i class="fa-solid fa-book-open"></i></span>
+                    <div>
+                        <span class="account-eyebrow">PEMBUKUAN TOKO</span>
+                        <h4>Daftar Akun</h4>
+                        <p>Susun akun keuangan toko agar transaksi lebih rapi.</p>
+                    </div>
+                    <span class="account-count"><strong id="jumlahAkunDatabase">0</strong><small>akun</small></span>
+                </section>
+                <div class="account-form-card">
+                    <h4 id="formAkunTitle">Tambah Akun Baru</h4>
+                    <p class="account-form-hint">Isi kode, nama, dan kelompok akun.</p>
+                <input type="hidden" id="editIndexAkun" value="-1">
+                    <div class="account-form-grid">
+                        <div class="form-group">
+                            <label for="kodeAkun">Kode Akun</label>
+                            <input type="text" id="kodeAkun" placeholder="Contoh: 101">
+                        </div>
+                        <div class="form-group">
+                            <label for="namaAkun">Nama Akun</label>
+                            <input type="text" id="namaAkun" placeholder="Contoh: Kas Tunai">
+                        </div>
+                        <div class="form-group">
+                            <label for="jenisAkun">Jenis Akun</label>
+                            <select id="jenisAkun">
+                                <option value="">Pilih jenis akun</option>
+                                <option value="Aset">Aset</option>
+                                <option value="Kewajiban">Kewajiban</option>
+                                <option value="Modal">Modal</option>
+                                <option value="Pendapatan">Pendapatan</option>
+                                <option value="Beban">Beban</option>
+                                <option value="Operasional">Operasional</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="account-form-actions">
+                        <button class="account-save-button" id="btnSimpanAkun" type="button" onclick="simpanAkun()"><i class="fa-solid fa-plus" aria-hidden="true"></i> Simpan Akun</button>
+                        <button class="account-cancel-button" id="btnBatalEditAkun" type="button" onclick="batalEditAkun()" style="display:none;">Batal</button>
+                    </div>
+                </div>
+                <div class="account-list-heading">
+                    <div><h4>Akun Tersimpan</h4><p>Data tersimpan di browser laptop ini.</p></div>
+                    <label class="account-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="cariAkun" type="search" placeholder="Cari akun..." aria-label="Cari akun" oninput="renderAkunDatabase()">
+                    </label>
+                </div>
+                <div id="containerListAkun" class="account-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="cloud-sync.js"></script>
+    <script src="data-transfer.js"></script>
+    <script src="pwa-register.js"></script>
+</body>
+</html>

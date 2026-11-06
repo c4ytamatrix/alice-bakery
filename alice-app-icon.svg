@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#f3df9e"/>
+  <rect x="34" y="34" width="444" height="444" rx="92" fill="#fffaf0"/>
+  <path d="M124 235c0-20 17-36 37-36 12-32 44-53 80-53s68 21 80 53c20 0 37 16 37 36v75c0 18-14 32-32 32H156c-18 0-32-14-32-32z" fill="#c18d3c" stroke="#573d26" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M210 206c-10-17-12-34-5-51m55 50c-8-20-8-39 1-58m49 59c-8-18-8-35-1-51" fill="none" stroke="#573d26" stroke-width="13" stroke-linecap="round"/>
+  <path d="M254 219v108m-57-52h37m64 0h29" fill="none" stroke="#573d26" stroke-width="12" stroke-linecap="round"/>
+  <text x="256" y="399" fill="#573d26" font-family="Georgia,serif" font-size="66" font-weight="700" text-anchor="middle">Alice</text>
+  <path d="M166 422h180" stroke="#c18d3c" stroke-width="8" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Alice Bakery - Pembukuan",
+  "short_name": "Alice Bakery",
+  "description": "Sistem pembukuan dan operasional Alice Bakery & Roti Bakar",
+  "lang": "id",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdfbf7",
+  "theme_color": "#f3df9e",
+  "icons": [
+    {
+      "src": "./alice-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
