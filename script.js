@@ -196,6 +196,7 @@ let keranjangPenjualan = [];
 let stokBarangPenjualan = JSON.parse(localStorage.getItem("aliceStokBarangPenjualan")) || {};
 let riwayatPenjualan = JSON.parse(localStorage.getItem("aliceRiwayatPenjualan")) || [];
 let mutasiKasPenjualan = JSON.parse(localStorage.getItem("aliceMutasiKasPenjualan")) || [];
+let mutasiKasManual = JSON.parse(localStorage.getItem("aliceMutasiKasManual")) || [];
 let akunBankQRISPerluDisimpan = false;
 mutasiKasPenjualan.forEach(mutasi => {
     if (mutasi.metodeBayar === "QRIS" && mutasi.akun === "kas_non_tunai") {
@@ -397,8 +398,25 @@ function bukaKasDariMenuTransaksi() {
 }
 
 function bukaJurnalKas() {
+    tutupFormJurnalKas();
     renderJurnalKas();
     document.getElementById("modalJurnalKas").style.display = "flex";
+}
+
+function bukaFormJurnalKas() {
+    let tanggalHariIni = formatTanggalISO(new Date());
+    let inputTanggal = document.getElementById("tanggalMutasiKas");
+    inputTanggal.max = tanggalHariIni;
+    if (!inputTanggal.value) inputTanggal.value = tanggalHariIni;
+    document.getElementById("statusMutasiKas").textContent = "";
+    document.getElementById("statusMutasiKas").dataset.state = "";
+    document.getElementById("daftarJurnalKas").hidden = true;
+    document.getElementById("formMutasiKas").hidden = false;
+}
+
+function tutupFormJurnalKas() {
+    document.getElementById("formMutasiKas").hidden = true;
+    document.getElementById("daftarJurnalKas").hidden = false;
 }
 
 function tutupJurnalKas() {
@@ -466,89 +484,126 @@ function renderJurnalKas() {
         : `${formatTanggalKas(tanggalMulaiKasAktif)} ${tanggalMulai.getFullYear()} – ${formatTanggalKas(tanggalAkhirISO)} ${tanggalAkhir.getFullYear()}`;
     document.getElementById("rentangTanggalKas").innerText = rentangTanggal;
 
-    let transaksiPemasukanTunai = new Map();
+    let akunAktif = document.getElementById("filterAkunKas").value;
+    let penjualanPerTransaksi = new Map();
     mutasiKasPenjualan
-        .filter(mutasi => mutasi.akun === "kas_tunai" &&
-            (mutasi.metodeBayar === "CASH" || mutasi.metodeBayar === "KEMBALIAN"))
+        .filter(mutasi => mutasi.akun === akunAktif &&
+            (mutasi.metodeBayar === "CASH" || mutasi.metodeBayar === "KEMBALIAN" || mutasi.metodeBayar === "QRIS"))
         .forEach(mutasi => {
             let idTransaksi = mutasi.transaksiId || mutasi.id;
-            let penjualan = transaksiPemasukanTunai.get(idTransaksi);
+            let key = `${mutasi.akun}:${idTransaksi}`;
+            let penjualan = penjualanPerTransaksi.get(key);
             if (!penjualan) {
                 penjualan = {
-                    id: idTransaksi,
+                    id: key,
                     tgl: mutasi.tgl,
                     waktu: mutasi.waktu || "",
-                    pelanggan: mutasi.pelanggan || "Pelanggan Umum",
+                    arah: "masuk",
+                    nama: mutasi.pelanggan || "Pelanggan Umum",
+                    keterangan: mutasi.metodeBayar === "QRIS" ? "Penjualan QRIS" : "Penjualan tunai",
                     jumlah: 0
                 };
-                transaksiPemasukanTunai.set(idTransaksi, penjualan);
+                penjualanPerTransaksi.set(key, penjualan);
             }
             penjualan.jumlah += Number(mutasi.jumlah) || 0;
         });
 
-    let saldoAkunBerjalan = 0;
-    let semuaPemasukan = [...transaksiPemasukanTunai.values()]
-        .filter(penjualan => penjualan.jumlah > 0)
-        .sort((a, b) => a.tgl.localeCompare(b.tgl) || a.waktu.localeCompare(b.waktu));
-    semuaPemasukan.forEach(penjualan => {
-        saldoAkunBerjalan += penjualan.jumlah;
-        penjualan.saldoBerjalan = saldoAkunBerjalan;
-    }    );
-    let transaksiMingguIni = semuaPemasukan.filter(penjualan =>
-        penjualan.tgl >= tanggalMulaiKasAktif && penjualan.tgl <= tanggalAkhirISO
-    );
-    let totalPerTanggal = new Map();
-    transaksiMingguIni.forEach(penjualan => {
-        totalPerTanggal.set(
-            penjualan.tgl,
-            (totalPerTanggal.get(penjualan.tgl) || 0) + penjualan.jumlah
-        );
-    });
-    let barisJurnalMingguIni = [...totalPerTanggal].map(([tgl, jumlah]) => ({
-        tipeBaris: "ringkasan",
-        tgl,
-        jumlah
-    }));
-
+    let semuaMutasi = [
+        ...[...penjualanPerTransaksi.values()].filter(mutasi => mutasi.jumlah > 0),
+        ...mutasiKasManual.filter(mutasi => mutasi.akun === akunAktif)
+    ].filter(mutasi => /^\d{4}-\d{2}-\d{2}$/.test(mutasi.tgl))
+        .sort((a, b) => a.tgl.localeCompare(b.tgl) ||
+            String(a.waktu || "").localeCompare(String(b.waktu || "")) ||
+            String(a.id).localeCompare(String(b.id)));
     let body = document.getElementById("tabelJurnalKasBody");
-    body.closest(".cash-journal-table-wrap").setAttribute("aria-label", "Daftar ringkasan pemasukan kas tunai dari penjualan");
+    body.closest(".cash-journal-table-wrap").setAttribute(
+        "aria-label",
+        `Jurnal ${akunAktif === "kas_tunai" ? "kas tunai" : "rekening bank"}`
+    );
     body.replaceChildren();
-    barisJurnalMingguIni.forEach(mutasi => {
+    let saldoAkunBerjalan = 0;
+    let jumlahBarisMingguIni = 0;
+    semuaMutasi.forEach(mutasi => {
+        let jumlah = Number(mutasi.jumlah) || 0;
+        saldoAkunBerjalan += mutasi.arah === "keluar" ? -jumlah : jumlah;
+        if (mutasi.tgl < tanggalMulaiKasAktif || mutasi.tgl > tanggalAkhirISO) return;
+        jumlahBarisMingguIni++;
         let row = document.createElement("tr");
-        if (mutasi.tipeBaris === "ringkasan") row.className = "cash-daily-summary-row";
+        let tanggalCell = document.createElement("td");
+        tanggalCell.className = "cash-date-cell";
+        tanggalCell.textContent = formatTanggalKas(mutasi.tgl);
+
         let namaCell = document.createElement("td");
         namaCell.className = "cash-party-cell";
-        namaCell.textContent = mutasi.tipeBaris === "ringkasan"
-            ? "Penjualan"
-            : mutasi.pelanggan || "Pelanggan Umum";
+        namaCell.textContent = mutasi.nama || "Transaksi";
 
         let masukCell = document.createElement("td");
         masukCell.className = "cash-flow-cell is-incoming";
-        masukCell.textContent = mutasi.jumlah.toLocaleString("id-ID");
-        masukCell.setAttribute(
-            "aria-label",
-            `${mutasi.tipeBaris === "ringkasan"
-                ? `Total tunai penjualan tanggal ${formatTanggalKas(mutasi.tgl)}`
-                : "Uang masuk"} Rp ${mutasi.jumlah.toLocaleString("id-ID")}`
-        );
+        masukCell.textContent = mutasi.arah === "keluar" ? "—" : jumlah.toLocaleString("id-ID");
+
+        let keluarCell = document.createElement("td");
+        keluarCell.className = "cash-flow-cell is-outgoing";
+        keluarCell.textContent = mutasi.arah === "keluar" ? jumlah.toLocaleString("id-ID") : "—";
 
         let saldoCell = document.createElement("td");
         saldoCell.className = "cash-balance-cell";
-        saldoCell.textContent = mutasi.tipeBaris === "ringkasan"
-            ? ""
-            : mutasi.saldoBerjalan.toLocaleString("id-ID");
-
+        saldoCell.textContent = saldoAkunBerjalan.toLocaleString("id-ID");
         let statusCell = document.createElement("td");
         statusCell.className = "cash-status-cell";
-        statusCell.textContent = mutasi.tipeBaris === "ringkasan" ? "Total harian" : "Penjualan";
+        statusCell.textContent = mutasi.keterangan || "";
 
-        row.append(namaCell, masukCell, saldoCell, statusCell);
+        row.append(tanggalCell, namaCell, masukCell, keluarCell, saldoCell, statusCell);
         body.appendChild(row);
     });
 
     let pesanKosong = document.getElementById("pesanJurnalKasKosong");
-    pesanKosong.textContent = "Belum ada pemasukan tunai penjualan untuk minggu ini.";
-    pesanKosong.hidden = barisJurnalMingguIni.length > 0;
+    pesanKosong.hidden = jumlahBarisMingguIni > 0;
+}
+
+function simpanMutasiKasManual(event) {
+    event.preventDefault();
+    let tgl = document.getElementById("tanggalMutasiKas").value;
+    let nama = document.getElementById("namaMutasiKas").value.trim();
+    let jumlah = Number(document.getElementById("jumlahMutasiKas").value);
+    let akun = document.getElementById("akunMutasiKas").value;
+    let arah = document.getElementById("jenisMutasiKas").value;
+    let status = document.getElementById("statusMutasiKas");
+    let hariIni = formatTanggalISO(new Date());
+
+    if (!tgl || tgl > hariIni || !nama || !Number.isSafeInteger(jumlah) || jumlah <= 0 ||
+        !["kas_tunai", "rekening_bank"].includes(akun) || !["masuk", "keluar"].includes(arah)) {
+        status.textContent = "Periksa kembali tanggal, nama transaksi, akun, jenis transaksi, dan jumlah.";
+        status.dataset.state = "error";
+        return;
+    }
+
+    let mutasiBaru = {
+        id: `KAS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        tgl,
+        waktu: new Date().toISOString(),
+        akun,
+        arah,
+        nama,
+        jumlah,
+        keterangan: document.getElementById("keteranganMutasiKas").value.trim()
+    };
+    try {
+        localStorage.setItem("aliceMutasiKasManual", JSON.stringify([...mutasiKasManual, mutasiBaru]));
+    } catch (error) {
+        status.textContent = `Transaksi belum tersimpan: ${error.message}`;
+        status.dataset.state = "error";
+        return;
+    }
+    mutasiKasManual.push(mutasiBaru);
+    event.currentTarget.reset();
+    let inputTanggal = document.getElementById("tanggalMutasiKas");
+    inputTanggal.max = hariIni;
+    inputTanggal.value = hariIni;
+    document.getElementById("filterAkunKas").value = akun;
+    status.textContent = "";
+    status.dataset.state = "";
+    tutupFormJurnalKas();
+    pilihTanggalMingguKas(tgl);
 }
 
 function bukaJualDariMenuTransaksi() {

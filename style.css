@@ -121,7 +121,7 @@ body { background-color: #fdfbf7; color: #3e2723; display: flex; justify-content
 .transaction-option-copy strong { color: #51432f; font-size: 13px; font-weight: 800; }
 .transaction-option-copy small { color: #a39784; font-size: 10px; }
 .transaction-option-chevron { flex: 0 0 17px; width: 17px; height: 17px; fill: none; stroke: #b4a58c; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cash-journal-screen { gap: 0; overflow: hidden; padding: 0; background: #f8faf8; }
+.cash-journal-screen { z-index: 220; gap: 0; overflow: hidden; padding: 0; background: #f8faf8; }
 .cash-journal-topbar { flex: 0 0 auto; margin: 0 0 10px; padding: 0 0 10px; }
 .cash-journal-topbar h3 { display: flex; align-items: center; gap: 9px; color: #c76b20; font-size: 12px; font-weight: 700; letter-spacing: -0.025em; }
 .cash-journal-topbar h3 i { color: #c94f50; font-size: 13px; font-weight: 900; }
@@ -135,21 +135,37 @@ body { background-color: #fdfbf7; color: #3e2723; display: flex; justify-content
 .cash-week-label strong { padding: 3px 8px; border-radius: 7px; background: #f4ead5; color: #76541f; font-size: 11px; font-weight: 650; letter-spacing: .01em; text-align: center; }
 .cash-calendar-button { display: grid; place-items: center; }
 .cash-calendar-button i { font-size: 16px; }
-.cash-journal-table-wrap { width: 100%; max-width: 100%; overflow: hidden; border: 1px solid #e3eae3; border-radius: 12px; background: #fff; }
-.cash-journal-table { width: 100%; min-width: 0; table-layout: fixed; margin: 0; border-collapse: separate; border-spacing: 0; font-size: 11px; }
+.cash-journal-body[hidden], .cash-entry-form[hidden] { display: none !important; }
+.cash-add-button { width: 100%; margin-top: 12px; padding: 12px; border: 0; border-radius: 12px; background: #d35400; color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; }
+.cash-entry-form { display: flex; flex-direction: column; gap: 10px; border: 1px solid #eee5d5; border-radius: 14px; background: #fffdf8; }
+.cash-entry-form h4 { margin: 0; color: #76541f; font-size: 13px; font-weight: 800; }
+.cash-entry-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.cash-entry-grid label, .cash-account-filter { display: flex; flex-direction: column; gap: 4px; color: #8c7650; font-size: 10px; font-weight: 750; }
+.cash-cancel-button { width: 100%; padding: 11px; border: 1px solid #eadfcd; border-radius: 12px; background: #fff; color: #76541f; font-size: 12px; font-weight: 750; cursor: pointer; }
+.cash-entry-grid input, .cash-entry-grid select, .cash-account-filter select { width: 100%; min-height: 36px; padding: 7px 9px; border: 1px solid #eadfcd; border-radius: 9px; background: #fff; color: #4e4232; font-size: 12px; }
+.cash-entry-status { min-height: 16px; margin: 0; color: #66776a; font-size: 11px; }
+.cash-entry-status[data-state="success"] { color: #328052; }
+.cash-entry-status[data-state="error"] { color: #c94f50; }
+.cash-account-filter { margin: 0 0 8px; }
+.cash-journal-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid #e3eae3; border-radius: 12px; background: #fff; }
+.cash-journal-table { width: 100%; min-width: 560px; table-layout: fixed; margin: 0; border-collapse: separate; border-spacing: 0; font-size: 11px; }
 .cash-journal-table th, .cash-journal-table td { min-width: 0; padding: 9px 4px; border: 0; border-right: 1px solid #edf1f4; border-bottom: 1px solid #edf1f4; color: #46564a; text-align: left; vertical-align: middle; overflow-wrap: anywhere; }
 .cash-journal-table th { background: #f1f7f2; color: #566d5c; font-size: 9px; font-weight: 850; }
 .cash-journal-table th:last-child { font-size: 9px; white-space: nowrap; }
-.cash-journal-table th:nth-child(1), .cash-journal-table td:nth-child(1) { width: 27%; }
-.cash-journal-table th:nth-child(2), .cash-journal-table td:nth-child(2) { width: 24%; text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.cash-journal-table th:nth-child(3), .cash-journal-table td:nth-child(3) { width: 24%; text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.cash-journal-table th:nth-child(4), .cash-journal-table td:nth-child(4) { width: 25%; }
+.cash-journal-table th:nth-child(1), .cash-journal-table td:nth-child(1) { width: 13%; white-space: nowrap; }
+.cash-journal-table th:nth-child(2), .cash-journal-table td:nth-child(2) { width: 24%; }
+.cash-journal-table th:nth-child(3), .cash-journal-table td:nth-child(3),
+.cash-journal-table th:nth-child(4), .cash-journal-table td:nth-child(4),
+.cash-journal-table th:nth-child(5), .cash-journal-table td:nth-child(5) { width: 15%; text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cash-journal-table th:nth-child(6), .cash-journal-table td:nth-child(6) { width: 18%; }
 .cash-journal-table .cash-balance-heading, .cash-journal-table .cash-balance-cell { color: #2672bd; font-weight: 850; }
 .cash-journal-table .cash-balance-heading { background: #eaf3fc; }
 .cash-journal-table .cash-balance-cell { background: #f4f9ff; }
 .cash-journal-table .cash-party-cell { color: #46564a; font-weight: 750; }
 .cash-journal-table .cash-flow-cell { font-weight: 750; }
 .cash-journal-table .cash-flow-cell.is-incoming { color: #328052; }
+.cash-journal-table .cash-flow-cell.is-outgoing { color: #c94f50; }
+.cash-journal-table .cash-date-cell { color: #6d5939; font-weight: 750; }
 .cash-journal-table .cash-status-cell { color: #59685d; font-size: 9px; font-weight: 750; }
 .cash-journal-table .cash-daily-summary-row td { border-top: 1px solid #e4ecdf; background: #f7faf4; font-weight: 800; }
 .cash-journal-table .cash-daily-summary-row .cash-party-cell { color: #6d5939; }
@@ -223,6 +239,7 @@ body { background-color: #fdfbf7; color: #3e2723; display: flex; justify-content
 .owner-menu-copy strong { color: #1e293b; font-size: 12px; font-weight: 750; }
 .owner-menu-copy small { color: #94a3b8; font-size: 10px; }
 .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 100; padding: 20px 20px 88px; flex-direction: column; overflow-y: auto; }
+.cash-journal-screen { z-index: 220; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #efebe9; padding-bottom: 12px; margin-bottom: 15px; }
 .btn-close { background: #fbe9e7; color: #c0392b; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; }
 .date-navigation { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 10px 12px; border: 1px solid #f0dfd0; border-radius: 14px; background: linear-gradient(135deg, #fffaf5, #fff3e8); box-shadow: 0 4px 12px rgba(92, 58, 33, 0.06); transition: background 0.2s ease, border-color 0.2s ease; }
