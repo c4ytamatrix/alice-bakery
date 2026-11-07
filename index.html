@@ -279,38 +279,63 @@
                     </table>
                 </div>
                 <p id="pesanJurnalKasKosong" class="cash-journal-empty" hidden>Belum ada catatan untuk akun ini minggu ini.</p>
-                <button class="cash-add-button" type="button" onclick="bukaFormJurnalKas()">+ Tambah</button>
+                <button class="cash-add-button" type="button" onclick="bukaFormJurnalKas()">Input</button>
             </div>
             <form id="formMutasiKas" class="cash-journal-body cash-entry-form" hidden onsubmit="simpanMutasiKasManual(event)">
-                <h4>Catat transaksi kas</h4>
-                <div class="cash-entry-grid">
-                    <label>Tanggal
-                        <input id="tanggalMutasiKas" type="date" required>
-                    </label>
-                    <label>Nama
-                        <input id="namaMutasiKas" type="text" maxlength="80" placeholder="Contoh: Belanja bahan" required>
-                    </label>
-                    <label>Masuk / Keluar
-                        <select id="jenisMutasiKas" required>
-                            <option value="masuk">Uang masuk</option>
-                            <option value="keluar">Uang keluar</option>
-                        </select>
-                    </label>
-                    <label>Jumlah (Rp)
-                        <input id="jumlahMutasiKas" type="number" min="1" step="1" inputmode="numeric" placeholder="Contoh: 50000" required>
-                    </label>
-                    <label>Akun
-                        <select id="akunMutasiKas" required>
-                            <option value="kas_tunai">Kas tunai</option>
-                            <option value="rekening_bank">Rekening bank / QRIS</option>
-                        </select>
-                    </label>
-                    <label>Keterangan
-                        <input id="keteranganMutasiKas" type="text" maxlength="160" placeholder="Opsional">
-                    </label>
+                <div class="journal-form-head">
+                    <button class="journal-back" type="button" aria-label="Kembali ke daftar" onclick="tutupFormJurnalKas()"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
+                    <div>
+                        <span>INPUT JURNAL</span>
+                        <h4>Catat dari akun</h4>
+                    </div>
                 </div>
-                <button class="btn-submit" type="submit">Simpan transaksi kas</button>
-                <button class="cash-cancel-button" type="button" onclick="tutupFormJurnalKas()">Kembali ke riwayat</button>
+                <label class="journal-field">Tanggal
+                    <input id="tanggalMutasiKas" type="date" required>
+                </label>
+                <div class="journal-account-card">
+                    <label for="cariAkunJurnal">Nama atau kode akun</label>
+                    <div class="journal-account-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="cariAkunJurnal" type="search" autocomplete="off" placeholder="Ketik mk atau Makan" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="saranAkunJurnal">
+                    </div>
+                    <div id="saranAkunJurnal" class="journal-suggestions" role="listbox" hidden></div>
+                </div>
+                <section id="panelJenisJurnal" class="journal-kind" hidden>
+                    <div class="journal-kind-banner">
+                        <span id="lencanaJenisJurnal">Biaya keluar</span>
+                        <strong id="judulJenisJurnal"></strong>
+                        <p id="isiJenisJurnal"></p>
+                    </div>
+                    <div id="arahJurnal" class="journal-choice" hidden>
+                        <span id="labelArahJurnal">Arah</span>
+                        <div class="journal-choice-row" role="radiogroup" aria-label="Arah nilai">
+                            <button id="arahMasukJurnal" class="is-selected" type="button" data-arah-jurnal="masuk">Masuk</button>
+                            <button id="arahKeluarJurnal" type="button" data-arah-jurnal="keluar">Keluar</button>
+                        </div>
+                    </div>
+                    <label class="journal-field" for="nilaiJurnal"><span id="labelNilaiJurnal">Nilai biaya</span>
+                        <input id="nilaiJurnal" type="number" min="1" step="1" inputmode="numeric" placeholder="Contoh: 25000">
+                    </label>
+                    <div class="journal-choice">
+                        <span id="labelCaraBayarJurnal">Bayar lewat</span>
+                        <div class="journal-choice-row" role="radiogroup" aria-label="Cara kas atau rekening">
+                            <button id="bayarKasJurnal" class="is-selected" type="button" data-cara-bayar="kas_tunai">Kas tunai</button>
+                            <button id="bayarRekeningJurnal" type="button" data-cara-bayar="rekening_bank">Rekening</button>
+                            <button id="bayarGabunganJurnal" type="button" data-cara-bayar="gabungan">Gabungan</button>
+                        </div>
+                    </div>
+                    <div id="pecahanBayarJurnal" class="journal-split" hidden>
+                        <label>Kas tunai
+                            <input id="nilaiKasJurnal" type="number" min="1" step="1" inputmode="numeric" placeholder="Bagian kas">
+                        </label>
+                        <label>Rekening
+                            <input id="nilaiRekeningJurnal" type="number" min="1" step="1" inputmode="numeric" placeholder="Bagian rekening">
+                        </label>
+                        <p id="sisaPecahanJurnal">Isi bagian kas dan rekening. Jumlah keduanya sama dengan nilai di atas.</p>
+                    </div>
+                </section>
+                <button class="btn-submit" type="submit">Simpan jurnal</button>
+                <button class="cash-cancel-button" type="button" onclick="tutupFormJurnalKas()">Kembali ke daftar</button>
                 <p id="statusMutasiKas" class="cash-entry-status" role="status" aria-live="polite"></p>
             </form>
         </section>

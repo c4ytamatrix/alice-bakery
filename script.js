@@ -404,14 +404,10 @@ function bukaJurnalKas() {
 }
 
 function bukaFormJurnalKas() {
-    let tanggalHariIni = formatTanggalISO(new Date());
-    let inputTanggal = document.getElementById("tanggalMutasiKas");
-    inputTanggal.max = tanggalHariIni;
-    if (!inputTanggal.value) inputTanggal.value = tanggalHariIni;
-    document.getElementById("statusMutasiKas").textContent = "";
-    document.getElementById("statusMutasiKas").dataset.state = "";
+    aturUlangFormJurnalKas();
     document.getElementById("daftarJurnalKas").hidden = true;
     document.getElementById("formMutasiKas").hidden = false;
+    document.getElementById("cariAkunJurnal").focus();
 }
 
 function tutupFormJurnalKas() {
@@ -560,51 +556,324 @@ function renderJurnalKas() {
     pesanKosong.hidden = jumlahBarisMingguIni > 0;
 }
 
+const bentukFormJurnal = {
+    Operasional: { nada: "keluar", lencana: "Biaya keluar", judul: "Operasional", isi: "Nilai ini mengurangi kas, rekening, atau gabungan keduanya.", labelNilai: "Nilai biaya", labelCara: "Bayar lewat", arah: "keluar" },
+    Beban: { nada: "keluar", lencana: "Biaya keluar", judul: "Beban", isi: "Nilai ini mengurangi kas, rekening, atau gabungan keduanya.", labelNilai: "Nilai biaya", labelCara: "Bayar lewat", arah: "keluar" },
+    Pendapatan: { nada: "masuk", lencana: "Uang masuk", judul: "Pendapatan", isi: "Nilai ini menambah kas, rekening, atau gabungan keduanya.", labelNilai: "Nilai masuk", labelCara: "Masuk lewat", arah: "masuk" },
+    Kewajiban: { nada: "hutang", lencana: "Bayar hutang", judul: "Kewajiban", isi: "Pelunasan mengurangi kas atau rekening.", labelNilai: "Nilai bayar", labelCara: "Bayar lewat", arah: "keluar" },
+    Aset: { nada: "keluar", lencana: "Aset", judul: "Aset", isi: "Pilih transfer masuk atau keluar, lalu lewat kas, rekening, atau gabungan.", labelNilai: "Nilai", labelCara: "Lewat", arahPilihan: true, labelMasuk: "Transfer masuk", labelKeluar: "Transfer keluar" },
+    Modal: { nada: "masuk", lencana: "Modal", judul: "Modal", isi: "Setoran menambah uang. Penarikan mengurangi uang.", labelNilai: "Nilai", labelCara: "Lewat", arahPilihan: true, labelMasuk: "Setoran", labelKeluar: "Penarikan" }
+};
+
+function akunJurnalDariKode(kode) {
+    return akunDatabase.find(akun => akun.kode === kode);
+}
+
+function aturUlangFormJurnalKas() {
+    let tanggalHariIni = formatTanggalISO(new Date());
+    let inputTanggal = document.getElementById("tanggalMutasiKas");
+    let cariAkun = document.getElementById("cariAkunJurnal");
+    inputTanggal.max = tanggalHariIni;
+    inputTanggal.value = tanggalHariIni;
+    cariAkun.value = "";
+    delete cariAkun.dataset.kode;
+    document.getElementById("nilaiJurnal").value = "";
+    document.getElementById("nilaiKasJurnal").value = "";
+    document.getElementById("nilaiRekeningJurnal").value = "";
+    document.getElementById("statusMutasiKas").textContent = "";
+    document.getElementById("statusMutasiKas").dataset.state = "";
+    pilihCaraBayarJurnal("kas_tunai");
+    pilihArahJurnal("masuk");
+    sembunyikanSaranAkunJurnal();
+    sembunyikanPanelJenisJurnal();
+}
+
+function sembunyikanPanelJenisJurnal() {
+    document.getElementById("panelJenisJurnal").hidden = true;
+}
+
+function tampilkanSaranAkunJurnal(kata) {
+    let daftar = document.getElementById("saranAkunJurnal");
+    let cari = document.getElementById("cariAkunJurnal");
+    let kataCari = kata.trim().toLowerCase();
+    let hasil = akunDatabase.filter(akun =>
+        !kataCari ||
+        String(akun.kode).toLowerCase().includes(kataCari) ||
+        String(akun.nama).toLowerCase().includes(kataCari)
+    );
+    daftar.replaceChildren();
+    if (hasil.length === 0) {
+        let kosong = document.createElement("div");
+        kosong.className = "journal-suggestion-empty";
+        kosong.textContent = akunDatabase.length === 0
+            ? "Belum ada akun. Tambah dulu di Daftar Akun."
+            : "Akun tidak ditemukan.";
+        daftar.appendChild(kosong);
+    } else {
+        hasil.forEach((akun, index) => {
+            let tombol = document.createElement("button");
+            tombol.type = "button";
+            tombol.className = index === 0 ? "journal-suggestion is-active" : "journal-suggestion";
+            tombol.dataset.kodeAkun = akun.kode;
+            tombol.setAttribute("role", "option");
+            let kode = document.createElement("span");
+            kode.className = "journal-suggestion-code";
+            kode.textContent = akun.kode;
+            let nama = document.createElement("span");
+            nama.className = "journal-suggestion-name";
+            nama.textContent = akun.nama;
+            let jenis = document.createElement("span");
+            jenis.className = "journal-suggestion-kind";
+            jenis.textContent = akun.jenis || "Akun";
+            tombol.append(kode, nama, jenis);
+            daftar.appendChild(tombol);
+        });
+    }
+    daftar.hidden = false;
+    cari.setAttribute("aria-expanded", "true");
+}
+
+function sembunyikanSaranAkunJurnal() {
+    let daftar = document.getElementById("saranAkunJurnal");
+    if (!daftar) return;
+    daftar.hidden = true;
+    daftar.replaceChildren();
+    document.getElementById("cariAkunJurnal").setAttribute("aria-expanded", "false");
+}
+
+function pilihAkunJurnal(kode) {
+    let akun = akunJurnalDariKode(kode);
+    if (!akun) return;
+    let input = document.getElementById("cariAkunJurnal");
+    input.value = `${akun.kode} · ${akun.nama}`;
+    input.dataset.kode = akun.kode;
+    sembunyikanSaranAkunJurnal();
+    tampilkanFormJenisJurnal(akun);
+}
+
+function tampilkanFormJenisJurnal(akun) {
+    let bentuk = bentukFormJurnal[akun.jenis] || {
+        nada: "keluar",
+        lencana: akun.jenis || "Akun",
+        judul: akun.nama,
+        isi: "Isi nilai, lalu pilih kas, rekening, atau gabungan.",
+        labelNilai: "Nilai",
+        labelCara: "Lewat",
+        arahPilihan: true,
+        labelMasuk: "Masuk",
+        labelKeluar: "Keluar"
+    };
+    let panel = document.getElementById("panelJenisJurnal");
+    panel.hidden = false;
+    panel.dataset.nada = bentuk.nada;
+    document.getElementById("lencanaJenisJurnal").textContent = bentuk.lencana;
+    document.getElementById("judulJenisJurnal").textContent = `${akun.kode} · ${akun.nama}`;
+    document.getElementById("isiJenisJurnal").textContent = bentuk.isi;
+    document.getElementById("labelNilaiJurnal").textContent = bentuk.labelNilai;
+    document.getElementById("labelCaraBayarJurnal").textContent = bentuk.labelCara;
+    let arah = document.getElementById("arahJurnal");
+    arah.hidden = !bentuk.arahPilihan;
+    if (bentuk.arahPilihan) {
+        document.getElementById("arahMasukJurnal").textContent = bentuk.labelMasuk;
+        document.getElementById("arahKeluarJurnal").textContent = bentuk.labelKeluar;
+        pilihArahJurnal(akun.jenis === "Modal" ? "masuk" : "keluar");
+    }
+    pilihCaraBayarJurnal("kas_tunai");
+}
+
+function pilihCaraBayarJurnal(cara) {
+    ["kas_tunai", "rekening_bank", "gabungan"].forEach(nilai => {
+        let tombol = document.querySelector(`[data-cara-bayar="${nilai}"]`);
+        if (tombol) tombol.classList.toggle("is-selected", nilai === cara);
+    });
+    let pecahan = document.getElementById("pecahanBayarJurnal");
+    pecahan.hidden = cara !== "gabungan";
+    if (cara !== "gabungan") {
+        document.getElementById("nilaiKasJurnal").value = "";
+        document.getElementById("nilaiRekeningJurnal").value = "";
+    }
+    perbaruiPecahanJurnal();
+}
+
+function caraBayarJurnal() {
+    let terpilih = document.querySelector("[data-cara-bayar].is-selected");
+    return terpilih ? terpilih.dataset.caraBayar : "kas_tunai";
+}
+
+function pilihArahJurnal(arah) {
+    document.querySelectorAll("[data-arah-jurnal]").forEach(tombol => {
+        tombol.classList.toggle("is-selected", tombol.dataset.arahJurnal === arah);
+    });
+    let panel = document.getElementById("panelJenisJurnal");
+    if (!document.getElementById("arahJurnal").hidden) panel.dataset.nada = arah === "masuk" ? "masuk" : "keluar";
+}
+
+function arahJurnalTerpilih() {
+    let akun = akunJurnalDariKode(document.getElementById("cariAkunJurnal").dataset.kode || "");
+    let bentuk = akun && bentukFormJurnal[akun.jenis];
+    if (bentuk && !bentuk.arahPilihan) return bentuk.arah;
+    let terpilih = document.querySelector("[data-arah-jurnal].is-selected");
+    return terpilih ? terpilih.dataset.arahJurnal : "keluar";
+}
+
+function perbaruiPecahanJurnal() {
+    let pesan = document.getElementById("sisaPecahanJurnal");
+    if (!pesan || document.getElementById("pecahanBayarJurnal").hidden) return;
+    let nilai = Number(document.getElementById("nilaiJurnal").value);
+    let kas = Number(document.getElementById("nilaiKasJurnal").value);
+    let rekening = Number(document.getElementById("nilaiRekeningJurnal").value);
+    if (!Number.isSafeInteger(nilai) || nilai <= 0 || !Number.isSafeInteger(kas) || kas <= 0 || !Number.isSafeInteger(rekening) || rekening <= 0) {
+        pesan.textContent = "Isi bagian kas dan rekening. Jumlah keduanya sama dengan nilai di atas.";
+        delete pesan.dataset.state;
+        return;
+    }
+    let selisih = nilai - (kas + rekening);
+    if (selisih === 0) {
+        pesan.textContent = "Kas dan rekening sudah sama dengan nilai.";
+        pesan.dataset.state = "cocok";
+    } else {
+        pesan.textContent = selisih > 0
+            ? `Masih kurang Rp ${selisih.toLocaleString("id-ID")}.`
+            : `Kelebihan Rp ${Math.abs(selisih).toLocaleString("id-ID")}.`;
+        pesan.dataset.state = "selisih";
+    }
+}
+
+function navigasiSaranAkunJurnal(event) {
+    let daftar = [...document.querySelectorAll("#saranAkunJurnal [data-kode-akun]")];
+    let saranTerbuka = !document.getElementById("saranAkunJurnal").hidden && daftar.length > 0;
+    if (event.key === "ArrowDown" && !saranTerbuka) {
+        tampilkanSaranAkunJurnal(event.target.value);
+        return;
+    }
+    if (!saranTerbuka) return;
+    let aktif = daftar.findIndex(item => item.classList.contains("is-active"));
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        aktif = event.key === "ArrowDown"
+            ? (aktif + 1) % daftar.length
+            : (aktif - 1 + daftar.length) % daftar.length;
+        daftar.forEach((item, index) => item.classList.toggle("is-active", index === aktif));
+        daftar[aktif].scrollIntoView({ block: "nearest" });
+    } else if (event.key === "Enter" && aktif >= 0) {
+        event.preventDefault();
+        pilihAkunJurnal(daftar[aktif].dataset.kodeAkun);
+    } else if (event.key === "Escape") {
+        sembunyikanSaranAkunJurnal();
+    }
+}
+
+function siapkanFormJurnalKas() {
+    let form = document.getElementById("formMutasiKas");
+    let cari = document.getElementById("cariAkunJurnal");
+    if (!form || !cari || cari.dataset.siap === "ya") return;
+    cari.dataset.siap = "ya";
+    cari.addEventListener("input", () => {
+        let akun = akunJurnalDariKode(cari.dataset.kode || "");
+        if (akun && cari.value !== `${akun.kode} · ${akun.nama}`) {
+            delete cari.dataset.kode;
+            sembunyikanPanelJenisJurnal();
+        }
+        tampilkanSaranAkunJurnal(cari.value);
+    });
+    cari.addEventListener("focus", () => tampilkanSaranAkunJurnal(cari.value));
+    cari.addEventListener("keydown", navigasiSaranAkunJurnal);
+    form.addEventListener("click", event => {
+        let saran = event.target.closest("[data-kode-akun]");
+        if (saran) {
+            pilihAkunJurnal(saran.dataset.kodeAkun);
+            return;
+        }
+        let cara = event.target.closest("[data-cara-bayar]");
+        if (cara) pilihCaraBayarJurnal(cara.dataset.caraBayar);
+        let arah = event.target.closest("[data-arah-jurnal]");
+        if (arah) pilihArahJurnal(arah.dataset.arahJurnal);
+    });
+    ["nilaiJurnal", "nilaiKasJurnal", "nilaiRekeningJurnal"].forEach(id => {
+        document.getElementById(id).addEventListener("input", perbaruiPecahanJurnal);
+    });
+    document.addEventListener("click", event => {
+        if (!event.target.closest(".journal-account-card")) sembunyikanSaranAkunJurnal();
+    });
+}
+
+function gagalSimpanJurnal(pesan) {
+    let status = document.getElementById("statusMutasiKas");
+    status.textContent = pesan;
+    status.dataset.state = "error";
+}
+
 function simpanMutasiKasManual(event) {
     event.preventDefault();
     let tgl = document.getElementById("tanggalMutasiKas").value;
-    let nama = document.getElementById("namaMutasiKas").value.trim();
-    let jumlah = Number(document.getElementById("jumlahMutasiKas").value);
-    let akun = document.getElementById("akunMutasiKas").value;
-    let arah = document.getElementById("jenisMutasiKas").value;
-    let status = document.getElementById("statusMutasiKas");
+    let akun = akunJurnalDariKode(document.getElementById("cariAkunJurnal").dataset.kode || "");
+    let nilai = Number(document.getElementById("nilaiJurnal").value);
+    let cara = caraBayarJurnal();
+    let arah = arahJurnalTerpilih();
     let hariIni = formatTanggalISO(new Date());
 
-    if (!tgl || tgl > hariIni || !nama || !Number.isSafeInteger(jumlah) || jumlah <= 0 ||
-        !["kas_tunai", "rekening_bank"].includes(akun) || !["masuk", "keluar"].includes(arah)) {
-        status.textContent = "Periksa kembali tanggal, nama transaksi, akun, jenis transaksi, dan jumlah.";
-        status.dataset.state = "error";
+    if (!tgl || tgl > hariIni) {
+        gagalSimpanJurnal("Tanggal belum diisi, atau masih tanggal yang akan datang.");
+        return;
+    }
+    if (!akun) {
+        gagalSimpanJurnal("Pilih akun dari daftar. Ketik nama atau kodenya, lalu ketuk pilihan yang muncul.");
+        return;
+    }
+    if (!Number.isSafeInteger(nilai) || nilai <= 0 || !["masuk", "keluar"].includes(arah)) {
+        gagalSimpanJurnal("Isi nilai dengan angka utuh yang lebih dari nol.");
         return;
     }
 
-    let mutasiBaru = {
-        id: `KAS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        tgl,
-        waktu: new Date().toISOString(),
-        akun,
-        arah,
-        nama,
-        jumlah,
-        keterangan: document.getElementById("keteranganMutasiKas").value.trim()
-    };
-    try {
-        localStorage.setItem("aliceMutasiKasManual", JSON.stringify([...mutasiKasManual, mutasiBaru]));
-    } catch (error) {
-        status.textContent = `Transaksi belum tersimpan: ${error.message}`;
-        status.dataset.state = "error";
+    let bagian = [];
+    if (cara === "gabungan") {
+        let kas = Number(document.getElementById("nilaiKasJurnal").value);
+        let rekening = Number(document.getElementById("nilaiRekeningJurnal").value);
+        if (!Number.isSafeInteger(kas) || !Number.isSafeInteger(rekening) || kas <= 0 || rekening <= 0 || kas + rekening !== nilai) {
+            gagalSimpanJurnal("Gabungan kas dan rekening harus terisi, dan jumlahnya sama dengan nilai.");
+            return;
+        }
+        bagian = [
+            { akun: "kas_tunai", jumlah: kas },
+            { akun: "rekening_bank", jumlah: rekening }
+        ];
+    } else if (cara === "kas_tunai" || cara === "rekening_bank") {
+        bagian = [{ akun: cara, jumlah: nilai }];
+    } else {
+        gagalSimpanJurnal("Pilih kas tunai, rekening, atau gabungan.");
         return;
     }
-    mutasiKasManual.push(mutasiBaru);
-    event.currentTarget.reset();
-    let inputTanggal = document.getElementById("tanggalMutasiKas");
-    inputTanggal.max = hariIni;
-    inputTanggal.value = hariIni;
-    document.getElementById("filterAkunKas").value = akun;
-    status.textContent = "";
-    status.dataset.state = "";
+
+    let waktu = new Date().toISOString();
+    let kelompok = `KAS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    let mutasiBaru = bagian.map((potongan, index) => ({
+        id: `${kelompok}-${index + 1}`,
+        kelompok,
+        tgl,
+        waktu,
+        akun: potongan.akun,
+        arah,
+        nama: akun.nama,
+        jumlah: potongan.jumlah,
+        keterangan: `${akun.jenis} · ${akun.kode}`,
+        kodeAkun: akun.kode,
+        jenisAkun: akun.jenis,
+        caraBayar: cara
+    }));
+
+    try {
+        localStorage.setItem("aliceMutasiKasManual", JSON.stringify([...mutasiKasManual, ...mutasiBaru]));
+    } catch (error) {
+        gagalSimpanJurnal(`Transaksi belum tersimpan: ${error.message}`);
+        return;
+    }
+    mutasiKasManual.push(...mutasiBaru);
+    document.getElementById("filterAkunKas").value = bagian[0].akun;
     tutupFormJurnalKas();
     pilihTanggalMingguKas(tgl);
 }
+
+siapkanFormJurnalKas();
 
 function bukaJualDariMenuTransaksi() {
     tutupModal("modalTransaksi");
