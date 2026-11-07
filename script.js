@@ -195,6 +195,10 @@ let dataTransaksiJual = JSON.parse(localStorage.getItem("aliceJual")) || [];
 let keranjangPenjualan = [];
 let stokBarangPenjualan = JSON.parse(localStorage.getItem("aliceStokBarangPenjualan")) || {};
 let riwayatPenjualan = JSON.parse(localStorage.getItem("aliceRiwayatPenjualan")) || [];
+let penjualanSedangDiedit = "";
+let pelangganSedangDiedit = "";
+let kembaliKeDaftarPenjualan = false;
+let detailNotaTerlihat = "";
 let mutasiKasPenjualan = JSON.parse(localStorage.getItem("aliceMutasiKasPenjualan")) || [];
 let mutasiKasManual = JSON.parse(localStorage.getItem("aliceMutasiKasManual")) || [];
 let akunBankQRISPerluDisimpan = false;
@@ -958,8 +962,12 @@ function hargaJualUntukPelanggan(barang, namaPelanggan = namaPelangganPenjualan(
     return Number.isFinite(hargaKhusus) ? hargaKhusus : Number(barang.detail) || 0;
 }
 
-function bukaFormPenjualan() {
-    if (tanggalAktifAdalahArsip()) {
+function bukaFormPenjualan(opsi = {}) {
+    if (!opsi.lanjutEdit) {
+        penjualanSedangDiedit = "";
+        pelangganSedangDiedit = "";
+    }
+    if (tanggalAktifAdalahArsip() && !penjualanSedangDiedit) {
         alert("Tanggal lampau hanya dapat dilihat sebagai arsip. Penjualan tidak dapat ditambahkan.");
         return;
     }
@@ -1035,7 +1043,7 @@ function perbaruiSaranBarangJual(teksCari) {
 }
 
 function tambahBarangKeKeranjang(barang) {
-    if (tanggalAktifAdalahArsip()) {
+    if (tanggalAktifAdalahArsip() && !penjualanSedangDiedit) {
         alert("Tanggal lampau hanya dapat dilihat sebagai arsip. Penjualan tidak dapat ditambahkan.");
         return;
     }
@@ -1190,7 +1198,23 @@ function batalkanPenjualanKasir() {
     keranjangPenjualan = [];
     pembayaranPenjualanMenungguPelanggan = null;
     pembayaranKurangMenungguKonfirmasi = null;
+    penjualanSedangDiedit = "";
+    pelangganSedangDiedit = "";
+    tutupKasirPenjualan();
+}
+
+function tutupKasirPenjualan() {
+    if (penjualanSedangDiedit) {
+        penjualanSedangDiedit = "";
+        pelangganSedangDiedit = "";
+        keranjangPenjualan = [];
+    }
     tutupModal("modalPenjualan");
+    if (kembaliKeDaftarPenjualan) {
+        kembaliKeDaftarPenjualan = false;
+        renderRiwayatPenjualanLengkap();
+        document.getElementById("modalRiwayatPenjualan").style.display = "flex";
+    }
 }
 
 function renderRiwayatPenjualanLengkap() {
@@ -1262,6 +1286,7 @@ function renderRiwayatPenjualanLengkap() {
 }
 
 function bukaDetailNotaPenjualan(transaksi) {
+    detailNotaTerlihat = transaksi.id || "";
     let waktu = transaksi.waktu ? new Date(transaksi.waktu) : null;
     let waktuLabel = waktu && !Number.isNaN(waktu.getTime())
         ? waktu.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
@@ -1355,7 +1380,20 @@ function bukaDetailNotaPenjualan(transaksi) {
 }
 
 function tutupDetailNotaPenjualan() {
+    detailNotaTerlihat = "";
     tutupModal("modalDetailNotaPenjualan");
+}
+
+function editPenjualanDariRincian() {
+    let id = detailNotaTerlihat;
+    tutupDetailNotaPenjualan();
+    editPenjualanDariDaftar(id);
+}
+
+function hapusPenjualanDariRincian() {
+    let id = detailNotaTerlihat;
+    hapusPenjualanDariDaftar(id);
+    if (!riwayatPenjualan.some(item => item.id === id)) tutupDetailNotaPenjualan();
 }
 
 function sisaPembayaranPenjualan(transaksi) {
@@ -1554,7 +1592,7 @@ function buatTabelRiwayatPenjualan(transaksiHari) {
 }
 
 function konfirmasiSimpanPenjualan() {
-    if (tanggalAktifAdalahArsip()) {
+    if (tanggalAktifAdalahArsip() && !penjualanSedangDiedit) {
         alert("Tanggal lampau hanya dapat dilihat sebagai arsip. Penjualan tidak dapat ditambahkan.");
         return;
     }
@@ -1583,8 +1621,16 @@ function konfirmasiSimpanPenjualan() {
             (jumlahProduksiDijual.get(item.kode) || 0) + Number(item.jumlah)
         );
     });
+    let transaksiDiedit = penjualanSedangDiedit
+        ? riwayatPenjualan.find(item => item.id === penjualanSedangDiedit)
+        : null;
     for (let [kode, jumlah] of jumlahProduksiDijual) {
         let stokTersedia = Number(stokBarangPenjualan[kode]) || 0;
+        if (transaksiDiedit) {
+            (transaksiDiedit.items || []).forEach(item => {
+                if (item.kode === kode) stokTersedia += Number(item.jumlah) || 0;
+            });
+        }
         if (jumlah > stokTersedia) {
             let barang = barangList.find(item => item.kode === kode);
             alert(`Stok ${barang ? barang.nama : kode} tidak cukup. Stok tersedia: ${stokTersedia}.`);
@@ -1606,6 +1652,9 @@ function bukaPilihanPelangganTransaksi() {
     let pelangganPedagang = pelangganList.filter(pelanggan => pelanggan.jenis === "Pedagang");
     select.add(new Option(pelangganPedagang.length ? "Pilih pelanggan Pedagang" : "Belum ada pelanggan Pedagang", ""));
     pelangganPedagang.forEach(pelanggan => select.add(new Option(pelanggan.nama, pelanggan.nama)));
+    if (pelangganSedangDiedit && [...select.options].some(opsi => opsi.value === pelangganSedangDiedit)) {
+        select.value = pelangganSedangDiedit;
+    }
     document.getElementById("pelangganBaruNamaKasir").value = "";
     document.getElementById("pelangganBaruHpKasir").value = "";
     document.getElementById("modalPelangganTransaksi").style.display = "flex";
@@ -1761,6 +1810,15 @@ function selesaikanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
 
 function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
     let waktu = new Date();
+    let tanggalCatat = tanggalAktif;
+    if (penjualanSedangDiedit) {
+        let transaksiLama = riwayatPenjualan.find(item => item.id === penjualanSedangDiedit);
+        if (transaksiLama) tanggalCatat = transaksiLama.tgl;
+        let idLama = penjualanSedangDiedit;
+        penjualanSedangDiedit = "";
+        pelangganSedangDiedit = "";
+        cabutCatatanPenjualan(idLama);
+    }
     let transaksiId = `JUAL-${waktu.getTime()}-${Math.random().toString(36).slice(2, 8)}`;
     let items = keranjangPenjualan.map(item => ({
         kode: item.kode,
@@ -1773,8 +1831,8 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
     }));
     let transaksi = {
         id: transaksiId,
-        noNota: buatNomorNotaPenjualan(tanggalAktif),
-        tgl: tanggalAktif,
+        noNota: buatNomorNotaPenjualan(tanggalCatat),
+        tgl: tanggalCatat,
         waktu: waktu.toISOString(),
         pelanggan: pelanggan || "Pelanggan Umum",
         items,
@@ -1790,7 +1848,7 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
         stokBarangPenjualan[item.kode] = (Number(stokBarangPenjualan[item.kode]) || 0) - item.jumlah;
         mutasiStok.push({
             id: `${transaksiId}-${item.kode}-${index}`,
-            tgl: tanggalAktif,
+            tgl: tanggalCatat,
             kode: item.kode,
             nama: item.nama,
             tipe: "keluar",
@@ -1801,7 +1859,7 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
         dataTransaksiJual.push({
             id: `${transaksiId}-${item.kode}-${index}`,
             transaksiId,
-            tgl: tanggalAktif,
+            tgl: tanggalCatat,
             nama: pelanggan || "Pelanggan Umum",
             roti: item.nama,
             kode: item.kode,
@@ -1828,7 +1886,7 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
         mutasiKasPenjualan.push({
             id: `${transaksiId}-${mutasi.metodeBayar}`,
             transaksiId,
-            tgl: tanggalAktif,
+            tgl: tanggalCatat,
             waktu: transaksi.waktu,
             pelanggan: transaksi.pelanggan,
             metodeBayar: mutasi.metodeBayar,
@@ -1844,7 +1902,7 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
         mutasiTabunganPelanggan.push({
             id: `${transaksiId}-TABUNGAN`,
             transaksiId,
-            tgl: tanggalAktif,
+            tgl: tanggalCatat,
             waktu: transaksi.waktu,
             pelanggan,
             akun: "tabungan_pelanggan",
@@ -1872,7 +1930,77 @@ function simpanPenjualanKasir(pelanggan, metodeBayar, total, pembayaran) {
 
 function tutupModalNotaPenjualan() {
     tutupModal("modalNotaPenjualan");
+    if (kembaliKeDaftarPenjualan) {
+        kembaliKeDaftarPenjualan = false;
+        renderRiwayatPenjualanLengkap();
+        document.getElementById("modalRiwayatPenjualan").style.display = "flex";
+        return;
+    }
     bukaFormPenjualan();
+}
+
+function cabutCatatanPenjualan(id) {
+    let index = riwayatPenjualan.findIndex(item => item.id === id);
+    if (index < 0) return;
+    let transaksi = riwayatPenjualan[index];
+    (Array.isArray(transaksi.items) ? transaksi.items : []).forEach(item => {
+        if (!item.kode) return;
+        stokBarangPenjualan[item.kode] = (Number(stokBarangPenjualan[item.kode]) || 0) + (Number(item.jumlah) || 0);
+    });
+    let pembayaran = transaksi.pembayaran || {};
+    saldoKasPenjualan.tunai = (Number(saldoKasPenjualan.tunai) || 0) - (Number(pembayaran.tunai) || 0);
+    saldoKasPenjualan.nonTunai = (Number(saldoKasPenjualan.nonTunai) || 0) - (Number(pembayaran.qris) || 0);
+    if (Number(pembayaran.tabungan) > 0 && transaksi.pelanggan) {
+        saldoTabunganPelanggan[transaksi.pelanggan] = (Number(saldoTabunganPelanggan[transaksi.pelanggan]) || 0) - Number(pembayaran.tabungan);
+    }
+    riwayatPenjualan.splice(index, 1);
+    dataTransaksiJual = dataTransaksiJual.filter(item => item.transaksiId !== id);
+    mutasiKasPenjualan = mutasiKasPenjualan.filter(item => item.transaksiId !== id);
+    mutasiTabunganPelanggan = mutasiTabunganPelanggan.filter(item => item.transaksiId !== id);
+    let mutasiStok = (JSON.parse(localStorage.getItem("aliceMutasiStokBarang")) || [])
+        .filter(item => item.referensi !== id && item.transaksiId !== id);
+    localStorage.setItem("aliceStokBarangPenjualan", JSON.stringify(stokBarangPenjualan));
+    localStorage.setItem("aliceMutasiStokBarang", JSON.stringify(mutasiStok));
+    localStorage.setItem("aliceRiwayatPenjualan", JSON.stringify(riwayatPenjualan));
+    localStorage.setItem("aliceJual", JSON.stringify(dataTransaksiJual));
+    localStorage.setItem("aliceMutasiKasPenjualan", JSON.stringify(mutasiKasPenjualan));
+    localStorage.setItem("aliceSaldoKasPenjualan", JSON.stringify(saldoKasPenjualan));
+    localStorage.setItem("aliceSaldoTabunganPelanggan", JSON.stringify(saldoTabunganPelanggan));
+    localStorage.setItem("aliceMutasiTabunganPelanggan", JSON.stringify(mutasiTabunganPelanggan));
+}
+
+function editPenjualanDariDaftar(id) {
+    let transaksi = riwayatPenjualan.find(item => item.id === id);
+    if (!transaksi) return;
+    penjualanSedangDiedit = id;
+    pelangganSedangDiedit = transaksi.pelanggan && transaksi.pelanggan !== "Pelanggan Umum" ? transaksi.pelanggan : "";
+    kembaliKeDaftarPenjualan = true;
+    keranjangPenjualan = (Array.isArray(transaksi.items) ? transaksi.items : []).map(item => ({
+        kode: item.kode,
+        nama: item.nama,
+        jenisBarang: item.jenisBarang,
+        unitBarang: item.satuan || "pcs",
+        hargaSatuan: Number(item.hargaSatuan) || 0,
+        hargaNormal: Number(item.hargaSatuan) || 0,
+        jumlah: Number(item.jumlah) || 1
+    }));
+    tutupModal("modalRiwayatPenjualan");
+    bukaFormPenjualan({ lanjutEdit: true });
+    document.getElementById("jumlahBayarPenjualan").value = String(jumlahDibayarPenjualan(transaksi) || "");
+    perbaruiPembayaranPenjualan();
+}
+
+function hapusPenjualanDariDaftar(id) {
+    let transaksi = riwayatPenjualan.find(item => item.id === id);
+    if (!transaksi) return;
+    let nama = transaksi.pelanggan || "Pelanggan Umum";
+    let nota = transaksi.noNota ? ` ${transaksi.noNota}` : "";
+    if (!window.confirm(`Hapus penjualan${nota} milik ${nama}? Stok dan catatan kas penjualan ini dikembalikan.`)) return;
+    cabutCatatanPenjualan(id);
+    renderRiwayatPenjualanLengkap();
+    renderTabelOrder();
+    renderBarang();
+    if (document.getElementById("modalJurnalKas").style.display === "flex") renderJurnalKas();
 }
 
 function tundaPengingatStokMasuk() {

@@ -464,6 +464,10 @@
                 <div id="detailNotaContent" class="sales-receipt-content"></div>
                 <footer class="sales-receipt-actions">
                     <button class="sales-secondary-button" type="button" onclick="tutupDetailNotaPenjualan()">Kembali</button>
+                    <div class="sales-receipt-tools">
+                        <button type="button" aria-label="Edit penjualan" onclick="editPenjualanDariRincian()"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                        <button type="button" aria-label="Hapus penjualan" onclick="hapusPenjualanDariRincian()"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                    </div>
                 </footer>
             </div>
         </section>
@@ -483,7 +487,7 @@
                         <i class="fa-solid fa-receipt" aria-hidden="true"></i>
                         <span>Lihat Penjualan</span>
                     </button>
-                    <button class="sales-close-button" type="button" aria-label="Tutup kasir" onclick="tutupModal('modalPenjualan')">×</button>
+                    <button class="sales-close-button" type="button" aria-label="Tutup kasir" onclick="tutupKasirPenjualan()">×</button>
                 </div>
             </header>
             <div class="sales-body">
